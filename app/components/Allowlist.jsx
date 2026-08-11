@@ -5,7 +5,7 @@ import XIcon from './XIcon';
 const GTD_TOTAL = 1200;
 
 export default function Allowlist() {
-  const [gtdClaimed, setGtdClaimed] = useState(743);
+  const [gtdClaimed, setGtdClaimed] = useState(0);
   const [submittedWallets, setSubmittedWallets] = useState(new Set());
 
   // Checker form state
@@ -169,7 +169,7 @@ export default function Allowlist() {
             <p className="allow-sub">First Come First Serve</p>
             <div className="fcfs-note" style={{ marginTop: '20px' }}>
               FCFS opens automatically once every GTD spot above has been claimed.
-              No wallet checks or spot counts here &mdash; just be ready and watch our X for the signal.
+              No wallet checks or spot counts here &mdash; just be ready and watch <a href="https://x.com/golemians" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--yellow)', textDecoration: 'underline' }}>@golemians</a> on X for the signal.
             </div>
           </div>
         </div>
@@ -180,7 +180,18 @@ export default function Allowlist() {
           <p className="allow-sub">Finish both tasks, then submit your details to lock in GTD WL.</p>
 
           <ol className="steps" style={{ marginTop: '20px' }}>
-            <li><span className="step-num">1</span>Quote the Tweet</li>
+            <li>
+              <span className="step-num">1</span>
+              Quote the Tweet:{' '}
+              <a
+                href="https://x.com/golemians/status/2087073858809446418?s=20"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: 'var(--yellow)', textDecoration: 'underline', marginLeft: '4px' }}
+              >
+                @golemians Tweet
+              </a>
+            </li>
             <li><span className="step-num">2</span>Share the Link (post it on your own timeline)</li>
           </ol>
 
@@ -194,7 +205,7 @@ export default function Allowlist() {
                 type="text"
                 value={handle}
                 onChange={(e) => setHandle(e.target.value)}
-                placeholder="@yourhandle"
+                placeholder="@golemians"
               />
               {handleError && <p className="field-error">{handleError}</p>}
             </div>
@@ -205,7 +216,7 @@ export default function Allowlist() {
                 type="url"
                 value={quoteLink}
                 onChange={(e) => setQuoteLink(e.target.value)}
-                placeholder="https://x.com/you/status/..."
+                placeholder="https://x.com/golemians/status/2087073858809446418"
               />
               {quoteError && <p className="field-error">{quoteError}</p>}
             </div>

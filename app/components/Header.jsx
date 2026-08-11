@@ -28,7 +28,7 @@ export default function Header() {
           ))}
         </ul>
         <div className="nav-right">
-          <a href="https://x.com" target="_blank" rel="noopener noreferrer" aria-label="Golemians on X">
+          <a href="https://x.com/golemians" target="_blank" rel="noopener noreferrer" aria-label="Golemians on X">
             <XIcon />
           </a>
           <a href="#allowlist" className="btn-cta">JOIN ALLOWLIST</a>
@@ -49,7 +49,7 @@ export default function Header() {
           </a>
         ))}
         <div className="mobile-bottom">
-          <a href="https://x.com" target="_blank" rel="noopener noreferrer" aria-label="Golemians on X">
+          <a href="https://x.com/golemians" target="_blank" rel="noopener noreferrer" aria-label="Golemians on X">
             <XIcon />
           </a>
           <a href="#allowlist" className="btn-cta">JOIN ALLOWLIST</a>

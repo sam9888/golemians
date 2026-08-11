@@ -22,7 +22,7 @@ export default function Footer() {
         <a href="#utility">UTILITY</a>
         <a href="#roadmap">ROADMAP</a>
         <a href="#faq">FAQ</a>
-        <a href="https://x.com" target="_blank" rel="noopener noreferrer" aria-label="Golemians on X">
+        <a href="https://x.com/golemians" target="_blank" rel="noopener noreferrer" aria-label="Golemians on X">
           <XIcon size={16} style={{ width: '16px', height: '16px' }} />
         </a>
       </div>
