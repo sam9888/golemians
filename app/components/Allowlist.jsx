@@ -1,18 +1,17 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import XIcon from './XIcon';
-
-const GTD_TOTAL = 1200;
 
 export default function Allowlist() {
   const [gtdClaimed, setGtdClaimed] = useState(0);
-  const [submittedWallets, setSubmittedWallets] = useState(new Set());
+  const [gtdTotal, setGtdTotal] = useState(1200);
+  const [statsLoaded, setStatsLoaded] = useState(false);
 
   // Checker form state
   const [checkWallet, setCheckWallet] = useState('');
   const [checkError, setCheckError] = useState('');
   const [checking, setChecking] = useState(false);
-  const [checkResult, setCheckResult] = useState(null); // { isWl: boolean }
+  const [checkResult, setCheckResult] = useState(null); // { isWl, status, message }
 
   // Submission form state
   const [handle, setHandle] = useState('');
@@ -35,6 +34,23 @@ export default function Allowlist() {
     }
   };
 
+  const fetchStats = async () => {
+    try {
+      const res = await fetch('/api/stats', { cache: 'no-store' });
+      const data = await res.json();
+      if (typeof data.claimed_count === 'number') setGtdClaimed(data.claimed_count);
+      if (typeof data.total_spots === 'number') setGtdTotal(data.total_spots);
+    } catch (err) {
+      console.error('Failed to load stats', err);
+    } finally {
+      setStatsLoaded(true);
+    }
+  };
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
   const handleCheck = async (e) => {
     e.preventDefault();
     setCheckError('');
@@ -46,11 +62,19 @@ export default function Allowlist() {
     }
 
     setChecking(true);
-    await new Promise((r) => setTimeout(r, 500));
-    setChecking(false);
-
-    const isWl = submittedWallets.has(checkWallet.trim().toLowerCase());
-    setCheckResult({ isWl });
+    try {
+      const res = await fetch(`/api/check-wl?wallet=${encodeURIComponent(checkWallet.trim())}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setCheckError(data.error || 'Something went wrong checking your status.');
+      } else {
+        setCheckResult({ isWl: data.isWl, status: data.status, message: data.message });
+      }
+    } catch (err) {
+      setCheckError('Network error — please try again.');
+    } finally {
+      setChecking(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -78,33 +102,38 @@ export default function Allowlist() {
     if (hasErr) return;
 
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 600));
-    setSubmitting(false);
+    try {
+      const res = await fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          handle,
+          quoteLink,
+          subWallet
+        })
+      });
+      const data = await res.json();
 
-    const normalized = subWallet.trim().toLowerCase();
-
-    if (submittedWallets.has(normalized)) {
-      setSubResult({ success: false, message: 'This wallet address has already been submitted.' });
-      return;
+      if (!res.ok) {
+        setSubResult({ success: false, message: data.error || 'Submission failed. Please try again.' });
+      } else {
+        // NOTE: the claimed count does NOT increment here. A submission
+        // only goes on the WL once the team reviews and approves it —
+        // the public counter reflects real approvals only.
+        setSubResult({ success: true, message: data.message || 'SUBMISSION RECEIVED — Pending Allocation.' });
+        setHandle('');
+        setQuoteLink('');
+        setSubWallet('');
+      }
+    } catch (err) {
+      setSubResult({ success: false, message: 'Network error — please try again.' });
+    } finally {
+      setSubmitting(false);
     }
-
-    if (gtdClaimed >= GTD_TOTAL) {
-      setSubResult({ success: false, message: 'GTD Phase is full. Keep an eye out for FCFS announcement.' });
-      return;
-    }
-
-    setSubmittedWallets((prev) => new Set(prev).add(normalized));
-    setGtdClaimed((prev) => prev + 1);
-    setSubResult({ success: true, message: 'SPOT LOCKED IN! Your details have been recorded for GTD WL.' });
-
-    // Reset inputs
-    setHandle('');
-    setQuoteLink('');
-    setSubWallet('');
   };
 
-  const remaining = Math.max(GTD_TOTAL - gtdClaimed, 0);
-  const pct = Math.min((gtdClaimed / GTD_TOTAL) * 100, 100);
+  const remaining = Math.max(gtdTotal - gtdClaimed, 0);
+  const pct = statsLoaded ? Math.min((gtdClaimed / gtdTotal) * 100, 100) : 0;
 
   return (
     <section id="allowlist" className="allow-hero grid-bg">
@@ -151,12 +180,12 @@ export default function Allowlist() {
                 {checkResult.isWl ? (
                   <>
                     WAGMI
-                    <span className="wagmi-sub">This wallet is on the GTD WL.</span>
+                    <span className="wagmi-sub">{checkResult.message || 'This wallet is on the GTD WL.'}</span>
                   </>
                 ) : (
                   <>
                     NOT WL YET
-                    <span className="wagmi-sub">Complete the tasks below and submit to lock in your spot.</span>
+                    <span className="wagmi-sub">{checkResult.message || 'Complete the tasks below and submit to lock in your spot.'}</span>
                   </>
                 )}
               </div>
@@ -233,15 +262,15 @@ export default function Allowlist() {
               {subWalletError && <p className="field-error">{subWalletError}</p>}
             </div>
 
-            <button type="submit" className="btn-cta full-btn" disabled={submitting || remaining <= 0}>
-              {submitting ? 'SUBMITTING...' : remaining <= 0 ? 'GTD FULL' : 'SUBMIT'}
+            <button type="submit" className="btn-cta full-btn" disabled={submitting || (statsLoaded && remaining <= 0)}>
+              {submitting ? 'SUBMITTING...' : (statsLoaded && remaining <= 0) ? 'GTD FULL' : 'SUBMIT'}
             </button>
             <p className="field-note">Make sure both steps above are done before submitting.</p>
           </form>
 
           {subResult && (
             <div className={`check-result ${subResult.success ? 'wagmi' : 'notfound'}`}>
-              {subResult.success ? 'SPOT LOCKED IN!' : 'SUBMISSION FAILED'}
+              {subResult.success ? 'SUBMISSION RECEIVED' : 'SUBMISSION FAILED'}
               <span className="wagmi-sub">{subResult.message}</span>
             </div>
           )}

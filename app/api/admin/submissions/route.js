@@ -1,6 +1,54 @@
-import { supabase } from '@/lib/supabaseClient';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
+function isAuthorized(request) {
+  const provided = request.headers.get('x-admin-key');
+  const expected = process.env.ADMIN_API_KEY;
+  return Boolean(expected) && provided === expected;
+}
+
+// GET /api/admin/submissions — list all submissions (admin only)
+export async function GET(request) {
+  if (!isAuthorized(request)) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('submissions')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    return new Response(JSON.stringify(data || []), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: 'Failed to fetch submissions' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+// PATCH /api/admin/submissions — approve/allocate/claim a submission (admin only)
 export async function PATCH(request) {
+  if (!isAuthorized(request)) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
   try {
     const body = await request.json();
     const { id, wallet, status, allocation, claimed } = body;
@@ -18,7 +66,7 @@ export async function PATCH(request) {
     if (claimed !== undefined) updateData.claimed = claimed;
     updateData.updated_at = new Date().toISOString();
 
-    let query = supabase.from('submissions').update(updateData);
+    let query = supabaseAdmin.from('submissions').update(updateData);
 
     if (id) {
       query = query.eq('id', id);

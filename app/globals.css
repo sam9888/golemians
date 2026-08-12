@@ -51,6 +51,8 @@
   .hero-banner{position:relative; width:100%; background:#0a0a0a; overflow:hidden; padding-bottom:36px;}
   .hero-banner-img{display:block; width:100%; height:auto;}
   .hero-banner-fade{position:absolute; inset:auto 0 0 0; height:120px; background:linear-gradient(180deg, transparent, rgba(10,10,10,.95)); pointer-events:none;}
+  .hero-banner-fallback{width:100%; min-height:280px; display:flex; align-items:center; justify-content:center; background:radial-gradient(circle at 50% 40%, rgba(204,255,0,.12), transparent 60%), #0a0a0a;}
+  .hero-banner-fallback-text{font-size:clamp(2rem,8vw,4.5rem); font-weight:800; letter-spacing:.08em; color:var(--yellow); text-shadow:0 0 24px rgba(204,255,0,.35);}
   .hero-actions-banner{position:relative; z-index:1; margin-top:-8px; padding:0 20px; justify-content:center;}
   @media(min-width:640px){ .hero-actions-banner{margin-top:-24px;} }
 

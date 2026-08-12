@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabaseClient';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -13,7 +13,7 @@ export async function GET(request) {
   }
 
   try {
-    let query = supabase.from('submissions').select('*');
+    let query = supabaseAdmin.from('submissions').select('*');
 
     if (wallet) {
       const normalizedWallet = wallet.trim().toLowerCase();

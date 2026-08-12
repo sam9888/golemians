@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabaseClient';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 function isValidEvm(addr) {
   return typeof addr === 'string' && /^0x[a-fA-F0-9]{40}$/.test(addr.trim());
@@ -51,7 +51,7 @@ export async function POST(request) {
     const cleanHandle = handle.replace(/^@/, '');
 
     // Duplicate check
-    const { data: existing, error: checkError } = await supabase
+    const { data: existing, error: checkError } = await supabaseAdmin
       .from('submissions')
       .select('id, wallet_address, status')
       .or(`evm_address.eq.${normalizedWallet},wallet_address.ilike.${walletAddress}`)
@@ -59,6 +59,10 @@ export async function POST(request) {
 
     if (checkError) {
       console.error('Error checking duplicate:', checkError);
+      return new Response(JSON.stringify({ error: `Database error: ${checkError.message}` }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     if (existing && existing.length > 0) {
@@ -68,8 +72,11 @@ export async function POST(request) {
       });
     }
 
-    // Insert new submission (default status: pending, allocation: 0, claimed: false)
-    const { data, error } = await supabase
+    // Insert new submission.
+    // IMPORTANT: status stays 'pending' and claimed stays false — nothing here
+    // auto-grants a claim. Claims/allocations only happen when the team
+    // approves via the admin route (PATCH /api/admin/submissions).
+    const { data, error } = await supabaseAdmin
       .from('submissions')
       .insert({
         x_handle: cleanHandle,
