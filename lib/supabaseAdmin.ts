@@ -18,9 +18,5 @@ if (!supabaseUrl || !supabaseSecretKey) {
 }
 
 export const supabaseAdmin = createClient(
-  supabaseUrl || "",
-  supabaseSecretKey || "",
-  {
-    auth: { persistSession: false, autoRefreshToken: false },
-  }
-);
+  supabaseUrl || "https://placeholder.supabase.co",
+  supabaseSecretKey || "placeholder-key",
