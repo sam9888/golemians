@@ -13,10 +13,21 @@ const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
 if (!supabaseUrl || !supabaseSecretKey) {
   console.error(
     "Missing SUPABASE_URL or SUPABASE_SECRET_KEY environment variables. " +
-      "Server-side Supabase calls will fail."
+      "Server-side Supabase calls will fail until these are set (e.g. in " +
+      "your Vercel project's Environment Variables settings)."
   );
 }
 
+// createClient() throws immediately if given an empty/invalid URL, which
+// would crash the entire build (Next.js evaluates route modules while
+// building). Fall back to a syntactically valid placeholder URL so the
+// build always succeeds — actual calls will still fail loudly at runtime
+// if the real env vars are missing, which is easier to diagnose than a
+// build-time crash.
 export const supabaseAdmin = createClient(
   supabaseUrl || "https://placeholder.supabase.co",
   supabaseSecretKey || "placeholder-key",
+  {
+    auth: { persistSession: false, autoRefreshToken: false },
+  }
+);
