@@ -67,6 +67,23 @@ export async function POST(request) {
       .maybeSingle();
 
     if (updateError || !updatedSession) {
+      // A concurrent request for the same session likely just consumed
+      // the play and created the round - check for it instead of just
+      // erroring out.
+      const { data: raceRound } = await supabaseAdmin
+        .from('game_rounds')
+        .select('id, step, status')
+        .eq('session_id', sessionId)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (raceRound) {
+        return new Response(JSON.stringify({ roundId: raceRound.id, step: raceRound.step }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
       return new Response(JSON.stringify({ error: 'A play is already being started - please try again.' }), {
         status: 409,
         headers: { 'Content-Type': 'application/json' }

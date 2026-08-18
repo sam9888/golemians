@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const FALLBACK_TWEET_URL = 'https://x.com/golemians/status/2087073858809446418?s=20';
 
@@ -61,6 +61,7 @@ export default function LadderGame() {
   const [roundId, setRoundId] = useState(null);
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
   const [busted, setBusted] = useState(false);
   const [roundMessage, setRoundMessage] = useState('');
   const [roundError, setRoundError] = useState('');
@@ -151,6 +152,8 @@ export default function LadderGame() {
   };
 
   const startRound = async () => {
+    if (busyRef.current) return;
+    busyRef.current = true;
     setRoundError('');
     setBusted(false);
     setRoundMessage('');
@@ -172,10 +175,13 @@ export default function LadderGame() {
       setRoundError('Network error - please try again.');
     } finally {
       setBusy(false);
+      busyRef.current = false;
     }
   };
 
   const climb = async () => {
+    if (busyRef.current) return;
+    busyRef.current = true;
     setRoundError('');
     setBusy(true);
     try {
@@ -206,10 +212,13 @@ export default function LadderGame() {
       setRoundError('Network error - please try again.');
     } finally {
       setBusy(false);
+      busyRef.current = false;
     }
   };
 
   const cashOut = async () => {
+    if (busyRef.current) return;
+    busyRef.current = true;
     setRoundError('');
     setBusy(true);
     try {
@@ -231,6 +240,7 @@ export default function LadderGame() {
       setRoundError('Network error - please try again.');
     } finally {
       setBusy(false);
+      busyRef.current = false;
     }
   };
 

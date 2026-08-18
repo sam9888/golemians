@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { isValidSessionId, TASK_KEYS, isValidTweetUrl, verifyQuoteTweet } from '@/lib/gameLogic';
+import { isValidSessionId, TASK_KEYS, isValidTweetUrl, verifyQuoteTweet, getDailyTweetUrl } from '@/lib/gameLogic';
 
 export async function POST(request) {
   try {
@@ -32,7 +32,8 @@ export async function POST(request) {
           headers: { 'Content-Type': 'application/json' }
         });
       }
-      const verification = await verifyQuoteTweet(tweetUrl);
+      const targetTweetUrl = await getDailyTweetUrl(supabaseAdmin);
+      const verification = await verifyQuoteTweet(tweetUrl, targetTweetUrl);
       if (!verification.ok) {
         return new Response(JSON.stringify({ error: verification.reason }), {
           status: 400,
