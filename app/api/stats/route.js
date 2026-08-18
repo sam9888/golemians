@@ -21,7 +21,7 @@ export async function GET() {
     const { count: approvedCount, error: countError } = await supabaseAdmin
       .from('submissions')
       .select('id', { count: 'exact', head: true })
-      .or('claimed.eq.true,status.eq.approved,status.eq.allocated');
+      .or('claimed.eq.true,status.eq.approved,status.eq.allocated,status.eq.winner');
 
     const claimedCount = baseClaimed + (countError ? 0 : (approvedCount || 0));
 

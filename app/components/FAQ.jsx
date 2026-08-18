@@ -12,7 +12,11 @@ const FAQ_ITEMS = [
   ],
   [
     'How do I join the allowlist?',
-    'Head to the Allowlist section, quote the tweet and share the link, then submit your X handle and EVM wallet address. That locks in your GTD WL. Use the wallet checker any time to confirm your status. FCFS opens automatically once every GTD spot is claimed, followed by the Public phase.'
+    'Head to the Climb the Ladder section, complete the 3 tasks to earn plays, then start climbing. Bank a spot at any rung, or push higher and risk losing it all. Winning any tier lets you submit your X handle and wallet to claim it - use the wallet checker any time to confirm your GTD status.'
+  ],
+  [
+    'How does the ladder game work?',
+    'Complete the follow, retweet, and quote-tweet tasks to earn plays - no wallet needed for this part. Each play starts a climb: reach the Public rung, then choose to cash out or push further to FCFS, then GTD. Busting at any point loses the whole climb, including tiers already banked. Once a session wins any tier, that session can\'t play again - enter your X handle and wallet afterward to lock in the win.'
   ],
   [
     'What\'s the difference between GTD, FCFS, and Public?',

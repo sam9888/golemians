@@ -5,6 +5,7 @@ import XIcon from './XIcon';
 const NAV_ITEMS = [
   { href: '#home', label: 'HOME' },
   { href: '#allowlist', label: 'ALLOWLIST' },
+  { href: '#ladder', label: 'CLIMB THE LADDER' },
   { href: '#guardians', label: 'GOLEMIANS' },
   { href: '#utility', label: 'UTILITY' },
   { href: '#roadmap', label: 'ROADMAP' },

@@ -34,7 +34,7 @@ export async function GET(request) {
 
     if (data && data.length > 0) {
       const row = data[0];
-      if (row.status === 'approved' || row.status === 'allocated' || row.allocation > 0 || row.claimed === true) {
+      if (row.status === 'approved' || row.status === 'allocated' || row.status === 'winner' || row.allocation > 0 || row.claimed === true) {
         return new Response(JSON.stringify({
           found: true,
           isWl: true,
