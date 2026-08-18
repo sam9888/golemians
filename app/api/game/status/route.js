@@ -20,7 +20,7 @@ export async function GET(request) {
 
     const { data: session } = await supabaseAdmin
       .from('game_sessions')
-      .select('plays_used, won, won_tier, claimed')
+      .select('plays_used, won, won_tier, claimed, bonus_plays')
       .eq('session_id', sessionId)
       .maybeSingle();
 
@@ -34,12 +34,14 @@ export async function GET(request) {
     const completedTasks = (completions || []).map((c) => c.task_key);
     const tokensEarned = completedTasks.length;
     const playsUsed = session?.plays_used || 0;
-    const playsAvailable = Math.max(tokensEarned - playsUsed, 0);
+    const bonusPlays = session?.bonus_plays || 0;
+    const playsAvailable = Math.max(tokensEarned + bonusPlays - playsUsed, 0);
 
     return new Response(JSON.stringify({
       completedTasks,
       allTasks: TASK_KEYS,
       playsAvailable,
+      bonusPlays,
       won: session?.won || false,
       wonTier: session?.won_tier || null,
       claimed: session?.claimed || false,

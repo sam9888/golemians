@@ -15,7 +15,7 @@ export async function POST(request) {
 
     const { data: session } = await supabaseAdmin
       .from('game_sessions')
-      .select('plays_used, won')
+      .select('plays_used, won, bonus_plays')
       .eq('session_id', sessionId)
       .maybeSingle();
 
@@ -47,7 +47,8 @@ export async function POST(request) {
       .eq('session_id', sessionId);
 
     const playsUsedSoFar = session?.plays_used || 0;
-    const playsAvailable = Math.max((tokensEarned || 0) - playsUsedSoFar, 0);
+    const bonusPlays = session?.bonus_plays || 0;
+    const playsAvailable = Math.max((tokensEarned || 0) + bonusPlays - playsUsedSoFar, 0);
 
     if (playsAvailable <= 0) {
       return new Response(JSON.stringify({ error: 'No plays left - complete tasks above to earn more.' }), {

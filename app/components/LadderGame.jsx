@@ -1,11 +1,15 @@
 'use client';
 import { useState, useEffect } from 'react';
 
-const TASKS = [
-  { key: 'follow', label: 'Follow @golemians', href: 'https://x.com/golemians' },
-  { key: 'retweet', label: 'Retweet the pinned post', href: 'https://x.com/golemians/status/2087073858809446418?s=20' },
-  { key: 'quote', label: 'Quote tweet & share', href: 'https://x.com/golemians/status/2087073858809446418?s=20' }
-];
+const FALLBACK_TWEET_URL = 'https://x.com/golemians/status/2087073858809446418?s=20';
+
+function buildTasks(tweetUrl) {
+  return [
+    { key: 'follow', label: 'Follow @golemians', href: 'https://x.com/golemians', needsLink: false },
+    { key: 'retweet', label: "Retweet today's post", href: tweetUrl, needsLink: false },
+    { key: 'quote', label: 'Quote tweet & share', href: tweetUrl, needsLink: true }
+  ];
+}
 
 const RUNGS = [
   { step: 1, tier: 'public', label: 'PUBLIC', multiplier: '2x' },
@@ -27,15 +31,32 @@ function getSessionId() {
   }
 }
 
+function getReferrer() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const params = new URLSearchParams(window.location.search || window.location.hash.split('?')[1] || '');
+    return params.get('ref');
+  } catch {
+    return null;
+  }
+}
+
 export default function LadderGame() {
   const [sessionId, setSessionId] = useState(null);
+  const [referrer, setReferrer] = useState(null);
+  const [dailyTweetUrl, setDailyTweetUrl] = useState(FALLBACK_TWEET_URL);
+  const TASKS = buildTasks(dailyTweetUrl);
   const [statusLoaded, setStatusLoaded] = useState(false);
   const [completedTasks, setCompletedTasks] = useState([]);
   const [playsAvailable, setPlaysAvailable] = useState(0);
+  const [bonusPlays, setBonusPlays] = useState(0);
   const [won, setWon] = useState(false);
   const [wonTier, setWonTier] = useState(null);
   const [claimed, setClaimed] = useState(false);
   const [loadingTask, setLoadingTask] = useState(null);
+  const [tweetUrl, setTweetUrl] = useState('');
+  const [taskError, setTaskError] = useState('');
+  const [copyLabel, setCopyLabel] = useState('COPY LINK');
 
   const [roundId, setRoundId] = useState(null);
   const [step, setStep] = useState(0);
@@ -60,6 +81,7 @@ export default function LadderGame() {
       if (res.ok) {
         setCompletedTasks(data.completedTasks || []);
         setPlaysAvailable(data.playsAvailable || 0);
+        setBonusPlays(data.bonusPlays || 0);
         setWon(data.won || false);
         setWonTier(data.wonTier || null);
         setClaimed(data.claimed || false);
@@ -75,28 +97,54 @@ export default function LadderGame() {
     }
   };
 
+  const fetchDailyTweet = async () => {
+    try {
+      const res = await fetch('/api/daily-tweet', { cache: 'no-store' });
+      const data = await res.json();
+      if (res.ok && data.tweetUrl) setDailyTweetUrl(data.tweetUrl);
+    } catch (err) {
+      console.error('Failed to load daily tweet', err);
+    }
+  };
+
   useEffect(() => {
     const sid = getSessionId();
     setSessionId(sid);
+    setReferrer(getReferrer());
     if (sid) fetchStatus(sid);
+    fetchDailyTweet();
   }, []);
 
   const handleTask = async (taskKey) => {
     if (!sessionId) return;
+    setTaskError('');
+
+    if (taskKey === 'quote' && !tweetUrl.trim()) {
+      setTaskError('Paste your quote tweet link first.');
+      return;
+    }
+
     setLoadingTask(taskKey);
     try {
       const res = await fetch('/api/game/task', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId, task: taskKey })
+        body: JSON.stringify({
+          session_id: sessionId,
+          task: taskKey,
+          tweetUrl: taskKey === 'quote' ? tweetUrl.trim() : undefined,
+          ref: referrer || undefined
+        })
       });
       const data = await res.json();
-      if (res.ok) {
+      if (!res.ok) {
+        setTaskError(data.error || 'Could not record that task.');
+      } else {
         setCompletedTasks(data.completedTasks || []);
         await fetchStatus(sessionId);
       }
     } catch (err) {
-      console.error('Task completion failed', err);
+      setTaskError('Network error - please try again.');
     } finally {
       setLoadingTask(null);
     }
@@ -218,6 +266,19 @@ export default function LadderGame() {
     }
   };
 
+  const copyReferralLink = async () => {
+    if (!sessionId || typeof window === 'undefined') return;
+    const link = `${window.location.origin}${window.location.pathname}?ref=${sessionId}#ladder`;
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopyLabel('COPIED!');
+      setTimeout(() => setCopyLabel('COPY LINK'), 2000);
+    } catch {
+      setCopyLabel('COPY FAILED');
+      setTimeout(() => setCopyLabel('COPY LINK'), 2000);
+    }
+  };
+
   const tasksComplete = completedTasks.length >= TASKS.length;
   const inRound = Boolean(roundId);
 
@@ -238,33 +299,76 @@ export default function LadderGame() {
               {TASKS.map((task) => {
                 const done = completedTasks.includes(task.key);
                 return (
-                  <div key={task.key} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <a
-                      href={task.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: 'var(--yellow)', textDecoration: 'underline', flex: 1, fontSize: '.9rem' }}
-                    >
-                      {task.label}
-                    </a>
-                    <button
-                      type="button"
-                      className={done ? 'btn-outline' : 'btn-cta'}
-                      style={{ padding: '8px 16px', fontSize: '.75rem', opacity: done ? 0.6 : 1 }}
-                      disabled={done || loadingTask === task.key}
-                      onClick={() => handleTask(task.key)}
-                    >
-                      {done ? 'DONE' : loadingTask === task.key ? '...' : 'I DID THIS'}
-                    </button>
+                  <div key={task.key}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <a
+                        href={task.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: 'var(--yellow)', textDecoration: 'underline', flex: 1, fontSize: '.9rem' }}
+                      >
+                        {task.label}
+                      </a>
+                      {!task.needsLink && (
+                        <button
+                          type="button"
+                          className={done ? 'btn-outline' : 'btn-cta'}
+                          style={{ padding: '8px 16px', fontSize: '.75rem', opacity: done ? 0.6 : 1 }}
+                          disabled={done || loadingTask === task.key}
+                          onClick={() => handleTask(task.key)}
+                        >
+                          {done ? 'DONE' : loadingTask === task.key ? '...' : 'I DID THIS'}
+                        </button>
+                      )}
+                    </div>
+                    {task.needsLink && !done && (
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                        <input
+                          type="url"
+                          value={tweetUrl}
+                          onChange={(e) => setTweetUrl(e.target.value)}
+                          placeholder="Paste your quote tweet link"
+                          style={{ flex: 1, fontSize: '.8rem' }}
+                        />
+                        <button
+                          type="button"
+                          className="btn-cta"
+                          style={{ padding: '8px 16px', fontSize: '.75rem', whiteSpace: 'nowrap' }}
+                          disabled={loadingTask === task.key}
+                          onClick={() => handleTask(task.key)}
+                        >
+                          {loadingTask === task.key ? 'VERIFYING...' : 'VERIFY'}
+                        </button>
+                      </div>
+                    )}
+                    {task.needsLink && done && (
+                      <p className="field-note" style={{ marginTop: '4px' }}>Verified against your tweet link.</p>
+                    )}
                   </div>
                 );
               })}
             </div>
 
+            {taskError && <p className="field-error" style={{ marginTop: '10px' }}>{taskError}</p>}
+
             {statusLoaded && (
               <div className="check-result wagmi" style={{ marginTop: '18px' }}>
                 {playsAvailable} PLAY{playsAvailable === 1 ? '' : 'S'} AVAILABLE
-                <span className="wagmi-sub">Complete more tasks above for extra plays.</span>
+                <span className="wagmi-sub">
+                  Complete more tasks above for extra plays.
+                  {bonusPlays > 0 ? ` (+${bonusPlays} from referrals)` : ''}
+                </span>
+              </div>
+            )}
+
+            {sessionId && (
+              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(204,255,0,.1)' }}>
+                <p className="allow-sub" style={{ marginBottom: '8px' }}>
+                  REFER A FRIEND &mdash; earn 1 bonus play when they use your link
+                </p>
+                <button type="button" className="btn-outline full-btn" onClick={copyReferralLink}>
+                  {copyLabel}
+                </button>
               </div>
             )}
           </div>
@@ -371,7 +475,7 @@ export default function LadderGame() {
                   </div>
                 )}
 
-                {!tasksComplete && playsAvailable === 0 && !statusLoaded === false && (
+                {!tasksComplete && playsAvailable === 0 && statusLoaded && (
                   <p className="field-note" style={{ marginTop: '10px' }}>Complete the tasks to the left to unlock your first climb.</p>
                 )}
 
