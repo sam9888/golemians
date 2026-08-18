@@ -4,7 +4,7 @@ import XIcon from './XIcon';
 
 export default function Allowlist() {
   const [gtdClaimed, setGtdClaimed] = useState(0);
-  const [gtdTotal, setGtdTotal] = useState(1200);
+  const [gtdTotal, setGtdTotal] = useState(1500);
   const [statsLoaded, setStatsLoaded] = useState(false);
 
   // Checker form state
@@ -140,9 +140,9 @@ export default function Allowlist() {
       <div className="container" style={{ paddingBottom: '96px' }}>
         <p className="eyebrow">SECURE YOUR SPOT</p>
         <h2 className="title glow-text" style={{ fontSize: 'clamp(1.8rem,5vw,3rem)' }}>JOIN THE ALLOWLIST</h2>
-        <p className="lede">First, GTD WL. Once every guaranteed spot is claimed, FCFS opens for everyone else.</p>
+        <p className="lede">1,500 GTD, 1,444 FCFS, and 1,500 Public — 4,444 total. First, GTD WL. Once every guaranteed spot is claimed, FCFS opens, followed by the Public phase.</p>
 
-        <div className="allow-grid allow-grid-2">
+        <div className="allow-grid allow-grid-3">
           {/* GTD CARD */}
           <div className="card allow-card center">
             <h3 style={{ color: 'var(--yellow)' }}>GTD PHASE</h3>
@@ -195,10 +195,20 @@ export default function Allowlist() {
           {/* FCFS CARD */}
           <div className="card allow-card">
             <h3>FCFS PHASE</h3>
-            <p className="allow-sub">First Come First Serve</p>
+            <p className="allow-sub">First Come First Serve &middot; 1,444 spots</p>
             <div className="fcfs-note" style={{ marginTop: '20px' }}>
               FCFS opens automatically once every GTD spot above has been claimed.
-              No wallet checks or spot counts here &mdash; just be ready and watch <a href="https://x.com/golemians" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--yellow)', textDecoration: 'underline' }}>@golemians</a> on X for the signal.
+              No wallet checks here &mdash; just be ready and watch <a href="https://x.com/golemians" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--yellow)', textDecoration: 'underline' }}>@golemians</a> on X for the signal.
+            </div>
+          </div>
+
+          {/* PUBLIC CARD */}
+          <div className="card allow-card">
+            <h3>PUBLIC PHASE</h3>
+            <p className="allow-sub">Open Mint &middot; 1,500 spots</p>
+            <div className="fcfs-note" style={{ marginTop: '20px' }}>
+              Once FCFS spots are gone, the remaining 1,500 open up to the public.
+              No allowlist or wallet checks needed &mdash; anyone can mint until the collection sells out.
             </div>
           </div>
         </div>

@@ -35,7 +35,7 @@ export default function Utility() {
           <div className="card stat-card"><p className="stat-val">5 NFT</p><p className="stat-label">ENTRY FLOOR</p></div>
           <div className="card stat-card"><p className="stat-val">80%</p><p className="stat-label">ROYALTY TREASURY</p></div>
           <div className="card stat-card"><p className="stat-val">50</p><p className="stat-label">MONTHLY WINNERS</p></div>
-          <div className="card stat-card"><p className="stat-val">1200</p><p className="stat-label">GTD SPOTS</p></div>
+          <div className="card stat-card"><p className="stat-val">1500</p><p className="stat-label">GTD SPOTS</p></div>
         </div>
       </div>
     </section>

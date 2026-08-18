@@ -12,11 +12,11 @@ const FAQ_ITEMS = [
   ],
   [
     'How do I join the allowlist?',
-    'Head to the Allowlist section, quote the tweet and share the link, then submit your X handle and EVM wallet address. That locks in your GTD WL. Use the wallet checker any time to confirm your status. FCFS opens automatically once every GTD spot is claimed.'
+    'Head to the Allowlist section, quote the tweet and share the link, then submit your X handle and EVM wallet address. That locks in your GTD WL. Use the wallet checker any time to confirm your status. FCFS opens automatically once every GTD spot is claimed, followed by the Public phase.'
   ],
   [
-    'What\'s the difference between GTD and FCFS?',
-    'GTD guarantees you a spot up to 1200 total, reserved for early supporters who complete the steps first. FCFS is open to everyone, first come first serve, with no spot cap.'
+    'What\'s the difference between GTD, FCFS, and Public?',
+    'Out of the 4,444 total supply: 1,500 spots are GTD (guaranteed, reserved for early supporters who complete the steps first), 1,444 are FCFS (first come first serve once GTD is full), and the final 1,500 open to the general Public once FCFS is gone.'
   ],
   [
     'What wallets are supported?',
