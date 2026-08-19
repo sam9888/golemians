@@ -113,7 +113,17 @@ export async function POST(request) {
 
       return new Response(JSON.stringify({
         error: 'A play is already being started - please try again.',
-        debug: { playsUsedSoFar, playsAvailable, tokensEarned, bonusPlays, sessionWon: session?.won || false }
+        debug: {
+          playsUsedSoFar,
+          playsAvailable,
+          tokensEarned,
+          bonusPlays,
+          sessionWon: session?.won || false,
+          sessionRowExisted: session !== null && session !== undefined,
+          ensureSessionErrorMsg: ensureSessionError?.message || null,
+          updateErrorCode: updateError?.code || null,
+          updateErrorMsg: updateError?.message || null
+        }
       }), {
         status: 409,
         headers: { 'Content-Type': 'application/json' }
