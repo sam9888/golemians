@@ -26,12 +26,15 @@ export async function POST(request) {
       });
     }
 
-    const { data: existingActive } = await supabaseAdmin
+    const { data: existingActiveRows } = await supabaseAdmin
       .from('game_rounds')
       .select('id, step, status')
       .eq('session_id', sessionId)
       .eq('status', 'active')
-      .maybeSingle();
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    const existingActive = existingActiveRows?.[0] || null;
 
     if (existingActive) {
       // Already mid-round - just return it instead of starting a new one.
@@ -70,12 +73,15 @@ export async function POST(request) {
       // A concurrent request for the same session likely just consumed
       // the play and created the round - check for it instead of just
       // erroring out.
-      const { data: raceRound } = await supabaseAdmin
+      const { data: raceRoundRows } = await supabaseAdmin
         .from('game_rounds')
         .select('id, step, status')
         .eq('session_id', sessionId)
         .eq('status', 'active')
-        .maybeSingle();
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      const raceRound = raceRoundRows?.[0] || null;
 
       if (raceRound) {
         return new Response(JSON.stringify({ roundId: raceRound.id, step: raceRound.step }), {

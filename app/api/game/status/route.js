@@ -24,12 +24,15 @@ export async function GET(request) {
       .eq('session_id', sessionId)
       .maybeSingle();
 
-    const { data: activeRound } = await supabaseAdmin
+    const { data: activeRoundRows } = await supabaseAdmin
       .from('game_rounds')
       .select('id, step, status')
       .eq('session_id', sessionId)
       .eq('status', 'active')
-      .maybeSingle();
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    const activeRound = activeRoundRows?.[0] || null;
 
     const completedTasks = (completions || []).map((c) => c.task_key);
     const tokensEarned = completedTasks.length;
