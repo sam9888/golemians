@@ -166,7 +166,7 @@ export default function LadderGame() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setRoundError(data.error || 'Could not start a round.');
+        setRoundError((data.error || 'Could not start a round.') + (data.debug ? ` [debug: ${JSON.stringify(data.debug)}]` : ''));
         await fetchStatus(sessionId);
       } else {
         setRoundId(data.roundId);

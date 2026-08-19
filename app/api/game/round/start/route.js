@@ -70,27 +70,37 @@ export async function POST(request) {
       .maybeSingle();
 
     if (updateError || !updatedSession) {
-      // A concurrent request for the same session likely just consumed
-      // the play and created the round - check for it instead of just
-      // erroring out.
-      const { data: raceRoundRows } = await supabaseAdmin
-        .from('game_rounds')
-        .select('id, step, status')
-        .eq('session_id', sessionId)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(1);
+      // A concurrent request for the same session likely just won this
+      // race and is in the middle of creating its round - that INSERT
+      // hasn't necessarily committed yet at this exact instant, so give
+      // it a few short retries instead of checking only once.
+      for (let attempt = 0; attempt < 4; attempt++) {
+        if (attempt > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 200));
+        }
 
-      const raceRound = raceRoundRows?.[0] || null;
+        const { data: raceRoundRows } = await supabaseAdmin
+          .from('game_rounds')
+          .select('id, step, status')
+          .eq('session_id', sessionId)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(1);
 
-      if (raceRound) {
-        return new Response(JSON.stringify({ roundId: raceRound.id, step: raceRound.step }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        const raceRound = raceRoundRows?.[0] || null;
+
+        if (raceRound) {
+          return new Response(JSON.stringify({ roundId: raceRound.id, step: raceRound.step }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
       }
 
-      return new Response(JSON.stringify({ error: 'A play is already being started - please try again.' }), {
+      return new Response(JSON.stringify({
+        error: 'A play is already being started - please try again.',
+        debug: { playsUsedSoFar, playsAvailable, tokensEarned, bonusPlays, sessionWon: session?.won || false }
+      }), {
         status: 409,
         headers: { 'Content-Type': 'application/json' }
       });
