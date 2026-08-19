@@ -167,12 +167,15 @@ export default function LadderGame() {
       const data = await res.json();
       if (!res.ok) {
         setRoundError(data.error || 'Could not start a round.');
+        await fetchStatus(sessionId);
       } else {
         setRoundId(data.roundId);
         setStep(data.step);
+        await fetchStatus(sessionId);
       }
     } catch (err) {
       setRoundError('Network error - please try again.');
+      await fetchStatus(sessionId);
     } finally {
       setBusy(false);
       busyRef.current = false;
@@ -193,6 +196,7 @@ export default function LadderGame() {
       const data = await res.json();
       if (!res.ok) {
         setRoundError(data.error || 'Something went wrong.');
+        await fetchStatus(sessionId);
       } else if (!data.survived) {
         setBusted(true);
         setRoundMessage(data.message);
@@ -210,6 +214,7 @@ export default function LadderGame() {
       }
     } catch (err) {
       setRoundError('Network error - please try again.');
+      await fetchStatus(sessionId);
     } finally {
       setBusy(false);
       busyRef.current = false;
@@ -230,6 +235,7 @@ export default function LadderGame() {
       const data = await res.json();
       if (!res.ok) {
         setRoundError(data.error || 'Something went wrong.');
+        await fetchStatus(sessionId);
       } else {
         setWon(true);
         setWonTier(data.tier);
@@ -238,6 +244,7 @@ export default function LadderGame() {
       }
     } catch (err) {
       setRoundError('Network error - please try again.');
+      await fetchStatus(sessionId);
     } finally {
       setBusy(false);
       busyRef.current = false;

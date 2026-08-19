@@ -98,7 +98,15 @@ export async function POST(request) {
 
     if (roundError) {
       console.error('Round start error:', roundError);
-      return new Response(JSON.stringify({ error: roundError.message }), {
+      // The play was already marked as spent above, but no round got
+      // created for it - roll that back so it isn't silently lost.
+      await supabaseAdmin
+        .from('game_sessions')
+        .update({ plays_used: playsUsedSoFar, updated_at: new Date().toISOString() })
+        .eq('session_id', sessionId)
+        .eq('plays_used', playsUsedSoFar + 1);
+
+      return new Response(JSON.stringify({ error: 'Could not start the round - your play was not spent, please try again.' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });
