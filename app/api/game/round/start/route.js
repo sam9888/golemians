@@ -13,6 +13,20 @@ export async function POST(request) {
       });
     }
 
+    // Guarantee a game_sessions row exists, regardless of whether the
+    // task route's own upsert succeeded earlier - this endpoint should
+    // never depend on that having worked.
+    const { error: ensureSessionError } = await supabaseAdmin
+      .from('game_sessions')
+      .upsert(
+        { session_id: sessionId },
+        { onConflict: 'session_id', ignoreDuplicates: true }
+      );
+
+    if (ensureSessionError) {
+      console.error('Failed to ensure game_sessions row exists:', ensureSessionError);
+    }
+
     const { data: session } = await supabaseAdmin
       .from('game_sessions')
       .select('plays_used, won, bonus_plays')

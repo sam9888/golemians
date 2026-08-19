@@ -43,12 +43,16 @@ export async function POST(request) {
     }
 
     // Ensure a game_sessions row exists for this session.
-    await supabaseAdmin
+    const { error: ensureSessionError } = await supabaseAdmin
       .from('game_sessions')
       .upsert(
         { session_id: sessionId, updated_at: new Date().toISOString() },
         { onConflict: 'session_id', ignoreDuplicates: true }
       );
+
+    if (ensureSessionError) {
+      console.error('Failed to ensure game_sessions row exists (task route):', ensureSessionError);
+    }
 
     // Record the referrer, only once, only if it's a different valid session.
     let referredBy = null;
