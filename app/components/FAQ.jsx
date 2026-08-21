@@ -12,15 +12,15 @@ const FAQ_ITEMS = [
   ],
   [
     'How do I join the allowlist?',
-    'Head to the Climb the Ladder section, complete the 3 tasks to earn plays, then start climbing. Bank a spot at any rung, or push higher and risk losing it all. Winning any tier lets you submit your X handle and wallet to claim it - use the wallet checker any time to confirm your GTD status.'
+    'GTD is closed. Head to the Climb the Ladder section, complete the 3 tasks to earn plays, then start climbing for a chance at FCFS. Bank Public first, or push further and risk it for FCFS. Winning lets you submit your X handle and wallet to claim it - use the checker any time to confirm a past GTD win.'
   ],
   [
     'How does the ladder game work?',
-    'Complete the follow, retweet, and quote-tweet tasks to earn plays - no wallet needed for this part. Each play starts a climb: reach the Public rung, then choose to cash out or push further to FCFS, then GTD. Busting at any point loses the whole climb, including tiers already banked. Once a session wins any tier, that session can\'t play again - enter your X handle and wallet afterward to lock in the win.'
+    'Complete the follow, retweet, and quote-tweet tasks to earn plays - no wallet needed for this part. Each play starts a climb: reach the Public rung, then choose to cash out or push further to FCFS, the top of the ladder. Busting at any point loses the whole climb, including Public if you already banked it. Once a session wins a tier, that session can\'t play again - enter your X handle and wallet afterward to lock in the win.'
   ],
   [
     'What\'s the difference between GTD, FCFS, and Public?',
-    'Out of the 4,444 total supply: 1,500 spots are GTD (guaranteed, reserved for early supporters who complete the steps first), 1,444 are FCFS (first come first serve once GTD is full), and the final 1,500 open to the general Public once FCFS is gone.'
+    'Out of the 4,444 total supply: 1,500 spots were GTD (guaranteed, now fully claimed and closed), 1,444 are FCFS (first come first serve, open now via the ladder game), and the final 1,500 open to the general Public once FCFS is gone.'
   ],
   [
     'What wallets are supported?',

@@ -13,8 +13,7 @@ function buildTasks(tweetUrl) {
 
 const RUNGS = [
   { step: 1, tier: 'public', label: 'PUBLIC', multiplier: '2x' },
-  { step: 2, tier: 'fcfs', label: 'FCFS', multiplier: '5x' },
-  { step: 3, tier: 'gtd', label: 'GTD', multiplier: '10x' }
+  { step: 2, tier: 'fcfs', label: 'FCFS', multiplier: '5x' }
 ];
 
 function getSessionId() {

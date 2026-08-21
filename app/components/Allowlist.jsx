@@ -65,12 +65,12 @@ export default function Allowlist() {
       <div className="container" style={{ paddingBottom: '96px' }}>
         <p className="eyebrow">SECURE YOUR SPOT</p>
         <h2 className="title glow-text" style={{ fontSize: 'clamp(1.8rem,5vw,3rem)' }}>THE ALLOWLIST</h2>
-        <p className="lede">1,500 GTD, 1,444 FCFS, and 1,500 Public — 4,444 total. Win a spot by climbing the ladder below, then check your status here any time.</p>
+        <p className="lede">GTD is complete. FCFS is now open — win a spot by climbing the ladder below, then check your GTD status here any time.</p>
 
         <div className="allow-grid allow-grid-3">
-          {/* GTD CARD */}
-          <div className="card allow-card center">
-            <h3 style={{ color: 'var(--yellow)' }}>GTD PHASE</h3>
+          {/* GTD CARD - COMPLETED */}
+          <div className="card allow-card center" style={{ opacity: 0.85 }}>
+            <h3 style={{ color: 'rgba(255,255,255,.6)' }}>GTD PHASE &mdash; COMPLETED</h3>
             <p className="allow-sub">Guaranteed spots for early supporters</p>
 
             <div style={{ marginTop: '24px' }}>
@@ -85,7 +85,7 @@ export default function Allowlist() {
 
             <form onSubmit={handleCheck} noValidate>
               <div className="field" style={{ marginTop: '22px' }}>
-                <label>CHECK WL STATUS</label>
+                <label>CHECK GTD STATUS</label>
                 <input
                   type="text"
                   value={checkWallet}
@@ -96,7 +96,7 @@ export default function Allowlist() {
                 {checkError && <p className="field-error">{checkError}</p>}
               </div>
               <button type="submit" className="btn-cta full-btn" disabled={checking}>
-                {checking ? 'CHECKING...' : 'CHECK WL STATUS'}
+                {checking ? 'CHECKING...' : 'CHECK GTD STATUS'}
               </button>
             </form>
 
@@ -110,20 +110,20 @@ export default function Allowlist() {
                 ) : (
                   <>
                     NOT WL YET
-                    <span className="wagmi-sub">{checkResult.message || 'Climb the ladder below for a chance to lock in your spot.'}</span>
+                    <span className="wagmi-sub">{checkResult.message || 'GTD is closed - try the ladder below for FCFS instead.'}</span>
                   </>
                 )}
               </div>
             )}
           </div>
 
-          {/* FCFS CARD */}
-          <div className="card allow-card">
-            <h3>FCFS PHASE</h3>
+          {/* FCFS CARD - NOW OPEN */}
+          <div className="card allow-card center" style={{ border: '1px solid var(--yellow)', boxShadow: '0 0 24px rgba(204,255,0,.15)' }}>
+            <h3 style={{ color: 'var(--yellow)' }}>FCFS PHASE &mdash; OPEN NOW</h3>
             <p className="allow-sub">First Come First Serve &middot; 1,444 spots</p>
             <div className="fcfs-note" style={{ marginTop: '20px' }}>
-              FCFS opens automatically once every GTD spot above has been claimed.
-              No wallet checks here &mdash; just be ready and watch <a href="https://x.com/golemians" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--yellow)', textDecoration: 'underline' }}>@golemians</a> on X for the signal.
+              GTD is complete, so FCFS is live right now. Climb the ladder below for a chance to lock in your spot &mdash;
+              no waiting, no signal to watch for.
             </div>
           </div>
 
