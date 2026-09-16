@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { isValidWallet } from '@/lib/pvpLogic';
-import { calculateHourlyProduction, calculateDefense } from '@/lib/cityLogic';
+import { calculateDailyProduction, calculateDefense, calculateDailyYield, canClaimDailyRewards } from '@/lib/cityLogic';
 
 export async function GET(request) {
   try {
@@ -42,18 +42,11 @@ export async function GET(request) {
       .select('*')
       .eq('city_id', city.id);
 
-    // Calculate production and defense
-    const production = calculateHourlyProduction(structures);
+    // Calculate production, yield, and defense
+    const dailyProduction = calculateDailyProduction(structures);
+    const dailyYield = calculateDailyYield(city.gole_balance);
     const defense = calculateDefense(structures);
-
-    // Calculate resources including production since last update
-    const updatedResources = { ...city.resources };
-    if (city.updated_at) {
-      const hoursPassed = (Date.now() - new Date(city.updated_at).getTime()) / (1000 * 60 * 60);
-      updatedResources.gold += Math.floor(production.gold * hoursPassed);
-      updatedResources.wood += Math.floor(production.wood * hoursPassed);
-      updatedResources.food += Math.floor(production.food * hoursPassed);
-    }
+    const canClaim = canClaimDailyRewards(city.gole_claimed_at);
 
     return new Response(
       JSON.stringify({
@@ -64,14 +57,18 @@ export async function GET(request) {
           wallet: normalizedWallet,
           x: city.x_coordinate,
           y: city.y_coordinate,
-          resources: updatedResources,
+          gole_balance: city.gole_balance,
           nft_balance: city.nft_balance,
           total_strength: city.total_strength,
           last_attacked_at: city.last_attacked_at,
           structures: structures.length,
           golemians: golemians.length,
-          production_per_hour: production,
+          daily_production: dailyProduction,
+          daily_yield: dailyYield,
+          total_daily_reward: dailyProduction + dailyYield,
           defensive_strength: defense,
+          can_claim_rewards: canClaim,
+          gole_claimed_at: city.gole_claimed_at,
           created_at: city.created_at
         }
       }),

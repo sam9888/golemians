@@ -32,7 +32,7 @@ export async function POST(request) {
     // Generate coordinates
     const coords = generateCityCoordinates();
 
-    // Create city
+    // Create city with starting $GOLE balance
     const { data: city, error } = await supabaseAdmin
       .from('cities')
       .insert({
@@ -40,7 +40,8 @@ export async function POST(request) {
         city_name: city_name || 'My City',
         x_coordinate: coords.x,
         y_coordinate: coords.y,
-        resources: { gold: 1000, wood: 1000, food: 1000 }
+        gole_balance: 100000, // Starting balance: 100,000 $GOLE
+        gole_claimed_at: new Date().toISOString()
       })
       .select()
       .single();
@@ -70,7 +71,7 @@ export async function POST(request) {
           wallet: normalizedWallet,
           x: city.x_coordinate,
           y: city.y_coordinate,
-          resources: city.resources
+          gole_balance: city.gole_balance
         }
       }),
       { status: 201, headers: { 'Content-Type': 'application/json' } }

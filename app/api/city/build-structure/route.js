@@ -37,30 +37,20 @@ export async function POST(request) {
       );
     }
 
-    const resources = city.resources || { gold: 0, wood: 0, food: 0 };
-
-    // Check if can afford
-    if (
-      resources.gold < config.buildCost.gold ||
-      resources.wood < config.buildCost.wood ||
-      resources.food < config.buildCost.food
-    ) {
+    // Check if can afford $GOLE
+    if (city.gole_balance < config.buildCost) {
       return new Response(
         JSON.stringify({
-          error: 'Not enough resources',
+          error: 'Not enough $GOLE tokens',
           need: config.buildCost,
-          have: resources
+          have: city.gole_balance
         }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    // Deduct resources
-    const newResources = {
-      gold: resources.gold - config.buildCost.gold,
-      wood: resources.wood - config.buildCost.wood,
-      food: resources.food - config.buildCost.food
-    };
+    // Deduct $GOLE from city balance
+    const newBalance = city.gole_balance - config.buildCost;
 
     // Build structure
     const { data: structure, error: buildError } = await supabaseAdmin
@@ -75,10 +65,10 @@ export async function POST(request) {
 
     if (buildError) throw buildError;
 
-    // Update city resources
+    // Update city $GOLE balance
     await supabaseAdmin
       .from('cities')
-      .update({ resources: newResources })
+      .update({ gole_balance: newBalance })
       .eq('id', city.id);
 
     return new Response(
@@ -90,7 +80,7 @@ export async function POST(request) {
           level: structure.level,
           created_at: structure.created_at
         },
-        resources_remaining: newResources
+        gole_balance_remaining: newBalance
       }),
       { status: 201, headers: { 'Content-Type': 'application/json' } }
     );

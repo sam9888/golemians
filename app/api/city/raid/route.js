@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { isValidWallet } from '@/lib/pvpLogic';
-import { calculateRaidOutcome, calculateStolenResources, calculateDefense } from '@/lib/cityLogic';
+import { calculateRaidOutcome, calculateStolenGole, calculateDefense } from '@/lib/cityLogic';
 
 export async function POST(request) {
   try {
@@ -79,40 +79,32 @@ export async function POST(request) {
     const defenderStrength = (defenderGolemians.length * 10) + calculateDefense(defenderStructures);
 
     // Determine outcome
-    const outcome = calculateRaidOutcome(attackerStrength, defenderStrength);
+    const attackerWins = calculateRaidOutcome(attackerStrength, defenderStrength);
 
-    let stolenResources = { gold: 0, wood: 0, food: 0 };
+    let stolenGole = 0;
     let raidStatus = 'defended';
 
-    if (outcome.attackerWins) {
-      stolenResources = calculateStolenResources(defenderCity.resources, attackerStrength);
+    if (attackerWins) {
+      stolenGole = calculateStolenGole(defenderCity.gole_balance, attackerStrength);
       raidStatus = 'success';
 
-      // Update defender resources
-      const newDefenderResources = {
-        gold: Math.max(0, defenderCity.resources.gold - stolenResources.gold),
-        wood: Math.max(0, defenderCity.resources.wood - stolenResources.wood),
-        food: Math.max(0, defenderCity.resources.food - stolenResources.food)
-      };
+      // Update defender $GOLE
+      const newDefenderBalance = Math.max(0, defenderCity.gole_balance - stolenGole);
 
       await supabaseAdmin
         .from('cities')
         .update({
-          resources: newDefenderResources,
+          gole_balance: newDefenderBalance,
           last_attacked_at: new Date().toISOString()
         })
         .eq('id', defenderCity.id);
 
-      // Update attacker resources
-      const newAttackerResources = {
-        gold: attackerCity.resources.gold + stolenResources.gold,
-        wood: attackerCity.resources.wood + stolenResources.wood,
-        food: attackerCity.resources.food + stolenResources.food
-      };
+      // Update attacker $GOLE
+      const newAttackerBalance = attackerCity.gole_balance + stolenGole;
 
       await supabaseAdmin
         .from('cities')
-        .update({ resources: newAttackerResources })
+        .update({ gole_balance: newAttackerBalance })
         .eq('id', attackerCity.id);
     }
 
@@ -124,7 +116,7 @@ export async function POST(request) {
         defender_city_id: defenderCity.id,
         attacker_strength: attackerStrength,
         defender_strength: defenderStrength,
-        resources_stolen: stolenResources,
+        resources_stolen: { gole: stolenGole },
         status: raidStatus,
         completed_at: new Date().toISOString()
       })
@@ -141,7 +133,7 @@ export async function POST(request) {
           status: raidStatus,
           attacker_strength: attackerStrength,
           defender_strength: defenderStrength,
-          resources_stolen: stolenResources
+          gole_stolen: stolenGole
         }
       }),
       { status: 201, headers: { 'Content-Type': 'application/json' } }

@@ -7,7 +7,7 @@ export default function CityBuilder() {
   const [city, setCity] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [tab, setTab] = useState('city'); // city, map, raid
+  const [tab, setTab] = useState('city'); // city, map
 
   const [cityName, setCityName] = useState('My City');
   const [creating, setCreating] = useState(false);
@@ -17,6 +17,8 @@ export default function CityBuilder() {
 
   const [selectedTarget, setSelectedTarget] = useState(null);
   const [raiding, setRaiding] = useState(false);
+
+  const [claimingRewards, setClaimingRewards] = useState(false);
 
   const createCity = async () => {
     if (!wallet.trim()) {
@@ -108,6 +110,29 @@ export default function CityBuilder() {
     }
   };
 
+  const claimRewards = async () => {
+    if (!city) return;
+    setClaimingRewards(true);
+    setError('');
+    try {
+      const res = await fetch('/api/city/claim-rewards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet_address: wallet.trim() })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error);
+      } else {
+        await fetchCity(wallet.trim());
+      }
+    } catch (err) {
+      setError('Network error claiming rewards');
+    } finally {
+      setClaimingRewards(false);
+    }
+  };
+
   const raid = async (targetId) => {
     if (!city) return;
     setRaiding(true);
@@ -148,7 +173,7 @@ export default function CityBuilder() {
         <div className="container">
           <p className="eyebrow">CITY BUILDER</p>
           <h2 className="title glow-text">BUILD YOUR KINGDOM</h2>
-          <p className="lede">Command your Golemians, build structures, and raid other cities.</p>
+          <p className="lede">Command your Golemians, build with $GOLE, and raid other cities.</p>
 
           <div className="card allow-card" style={{ maxWidth: '400px', margin: '40px auto' }}>
             <h3 style={{ color: 'var(--yellow)' }}>CREATE YOUR CITY</h3>
@@ -181,6 +206,9 @@ export default function CityBuilder() {
               >
                 {creating ? 'CREATING...' : 'CREATE CITY'}
               </button>
+              <p style={{ fontSize: '.75rem', color: 'rgba(255,255,255,.6)', marginTop: '8px', textAlign: 'center' }}>
+                Starting balance: 100,000 $GOLE
+              </p>
             </div>
           </div>
         </div>
@@ -210,7 +238,7 @@ export default function CityBuilder() {
             style={{ padding: '10px 20px' }}
             onClick={() => setTab('map')}
           >
-            MAP
+            MAP & RAIDS
           </button>
         </div>
 
@@ -220,30 +248,37 @@ export default function CityBuilder() {
             {/* CITY INFO */}
             <div className="card allow-card">
               <h3 style={{ color: 'var(--yellow)' }}>{city.name}</h3>
-              <div style={{ marginTop: '16px', fontSize: '.9rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div style={{ marginTop: '16px', fontSize: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
-                  <p style={{ color: 'rgba(255,255,255,.6)' }}>Gold</p>
-                  <p style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{Math.floor(city.resources.gold)}</p>
+                  <p style={{ color: 'rgba(255,255,255,.6)', fontSize: '.85rem' }}>$GOLE BALANCE</p>
+                  <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--yellow)' }}>
+                    {Math.floor(city.gole_balance).toLocaleString()}
+                  </p>
                 </div>
                 <div>
-                  <p style={{ color: 'rgba(255,255,255,.6)' }}>Wood</p>
-                  <p style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{Math.floor(city.resources.wood)}</p>
-                </div>
-                <div>
-                  <p style={{ color: 'rgba(255,255,255,.6)' }}>Food</p>
-                  <p style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{Math.floor(city.resources.food)}</p>
-                </div>
-                <div>
-                  <p style={{ color: 'rgba(255,255,255,.6)' }}>NFTs</p>
-                  <p style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{city.nft_balance}</p>
+                  <p style={{ color: 'rgba(255,255,255,.6)', fontSize: '.85rem' }}>DAILY REWARDS</p>
+                  <p style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#4ade80' }}>
+                    +{Math.floor(city.total_daily_reward).toLocaleString()}
+                  </p>
                 </div>
               </div>
 
               <div style={{ marginTop: '16px', borderTop: '1px solid rgba(204,255,0,.2)', paddingTop: '12px', fontSize: '.85rem' }}>
-                <p><strong>Production/hour:</strong> +{city.production_per_hour.gold}🟡 +{city.production_per_hour.wood}🟤 +{city.production_per_hour.food}🌾</p>
+                <p><strong>Structure Production:</strong> +{Math.floor(city.daily_production).toLocaleString()} $GOLE/day</p>
+                <p><strong>Daily Yield (5%):</strong> +{Math.floor(city.daily_yield).toLocaleString()} $GOLE/day</p>
                 <p><strong>Defense Strength:</strong> {city.defensive_strength}</p>
                 <p><strong>Location:</strong> ({city.x}, {city.y})</p>
               </div>
+
+              <button
+                type="button"
+                className={city.can_claim_rewards ? 'btn-cta full-btn' : 'btn-outline full-btn'}
+                style={{ marginTop: '16px' }}
+                disabled={claimingRewards || !city.can_claim_rewards}
+                onClick={claimRewards}
+              >
+                {claimingRewards ? 'CLAIMING...' : city.can_claim_rewards ? 'CLAIM DAILY REWARDS' : 'REWARDS CLAIMED TODAY'}
+              </button>
             </div>
 
             {/* BUILD MENU */}
@@ -255,15 +290,20 @@ export default function CityBuilder() {
                   <button
                     key={type}
                     type="button"
-                    className="btn-outline"
-                    style={{ fontSize: '.8rem', padding: '10px', textAlign: 'left' }}
-                    disabled={loading}
+                    className={city.gole_balance >= config.buildCost ? 'btn-cta' : 'btn-outline'}
+                    style={{
+                      fontSize: '.8rem',
+                      padding: '12px',
+                      textAlign: 'left',
+                      opacity: city.gole_balance >= config.buildCost ? 1 : 0.6
+                    }}
+                    disabled={loading || city.gole_balance < config.buildCost}
                     onClick={() => buildStructure(type)}
-                    title={`Costs: ${config.buildCost.gold}🟡 ${config.buildCost.wood}🟤 ${config.buildCost.food}🌾`}
+                    title={`Costs: ${config.buildCost.toLocaleString()} $GOLE`}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span><strong>{config.label}</strong></span>
-                      <span>{config.buildCost.gold}🟡 {config.buildCost.wood}🟤</span>
+                      <span style={{ fontSize: '.75rem' }}>{config.buildCost.toLocaleString()} $GOLE</span>
                     </div>
                     <p style={{ fontSize: '.7rem', marginTop: '4px', opacity: 0.7 }}>{config.description}</p>
                   </button>
@@ -276,7 +316,7 @@ export default function CityBuilder() {
         {/* MAP TAB */}
         {tab === 'map' && (
           <div className="card allow-card">
-            <h3 style={{ color: 'var(--yellow)', marginBottom: '16px' }}>WORLD MAP</h3>
+            <h3 style={{ color: 'var(--yellow)', marginBottom: '16px' }}>⚔️ WORLD MAP & RAIDS</h3>
             {loadingMap ? (
               <p>Loading map...</p>
             ) : cities.length === 0 ? (
@@ -288,20 +328,22 @@ export default function CityBuilder() {
                     key={c.id}
                     style={{
                       padding: '12px',
-                      border: '1px solid rgba(204,255,0,.2)',
+                      border: city?.id === c.id ? '2px solid var(--yellow)' : '1px solid rgba(204,255,0,.2)',
                       borderRadius: '6px',
-                      background: 'rgba(255,255,255,.02)'
+                      background: city?.id === c.id ? 'rgba(204,255,0,.1)' : 'rgba(255,255,255,.02)'
                     }}
                   >
-                    <p style={{ fontWeight: 'bold', color: 'var(--yellow)' }}>{c.name}</p>
-                    <p style={{ fontSize: '.8rem', color: 'rgba(255,255,255,.6)' }}>
-                      📍 ({c.x}, {c.y})
+                    <p style={{ fontWeight: 'bold', color: city?.id === c.id ? 'var(--yellow)' : '#fff' }}>
+                      {city?.id === c.id ? '📍 ' : ''}{c.name}
+                    </p>
+                    <p style={{ fontSize: '.8rem', color: 'rgba(255,255,255,.6)', marginTop: '4px' }}>
+                      ({c.x}, {c.y})
                     </p>
                     <p style={{ fontSize: '.75rem', marginTop: '6px' }}>
-                      NFTs: {c.nft_balance} | Strength: {c.strength}
+                      💎 {c.nft_balance} | 🛡️ {c.strength}
                     </p>
-                    <p style={{ fontSize: '.75rem', marginTop: '4px' }}>
-                      🟡{Math.floor(c.resources.gold)} 🟤{Math.floor(c.resources.wood)} 🌾{Math.floor(c.resources.food)}
+                    <p style={{ fontSize: '.75rem', marginTop: '4px', color: 'var(--yellow)' }}>
+                      💰 {Math.floor(c.resources.gole || c.resources || 0).toLocaleString()} $GOLE
                     </p>
                     {city?.id !== c.id && (
                       <button
@@ -321,9 +363,9 @@ export default function CityBuilder() {
 
             {selectedTarget && (
               <div className="check-result wagmi" style={{ marginTop: '20px' }}>
-                RAID RESULT
+                {selectedTarget.status === 'success' ? 'RAID SUCCESS!' : 'RAID DEFENDED!'}
                 <span className="wagmi-sub">
-                  Status: {selectedTarget.status} | Stolen: 🟡{Math.floor(selectedTarget.resources_stolen.gold)}
+                  Status: {selectedTarget.status} | $GOLE Stolen: {Math.floor(selectedTarget.gole_stolen).toLocaleString()}
                 </span>
               </div>
             )}
