@@ -2,6 +2,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { isValidWallet, NFT_MIN_BALANCE } from '@/lib/pvpLogic';
 import { generateCityCoordinates } from '@/lib/cityLogic';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { verifyNftOwnership } from '@/lib/web3Connect';
 
 export async function POST(request) {
   try {
@@ -28,14 +29,19 @@ export async function POST(request) {
 
     const normalizedWallet = wallet_address.toLowerCase();
 
-    // Verify NFT balance (10+ minimum)
-    const { data: playerData } = await supabaseAdmin
-      .from('pvp_players')
-      .select('nft_balance')
-      .eq('wallet_address', normalizedWallet)
-      .maybeSingle();
-
-    const nftBalance = playerData?.nft_balance || 0;
+    // Verify NFT balance on blockchain (10+ minimum)
+    let nftBalance;
+    try {
+      nftBalance = await verifyNftOwnership(normalizedWallet);
+    } catch (err) {
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to verify NFT balance. Please try again.',
+          details: err.message
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (nftBalance < NFT_MIN_BALANCE) {
       return new Response(
