@@ -1,9 +1,12 @@
+import { ethers } from 'ethers';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { isValidWallet, NFT_MIN_BALANCE } from '@/lib/pvpLogic';
 
-// For now, mock NFT verification. In production, you'd call:
-// ethers.provider.getBalance() or your NFT contract's balanceOf()
-// This is a placeholder that checks wallet format and creates/updates player record
+// ERC721 ABI - only need balanceOf function
+const ERC721_ABI = [
+  'function balanceOf(address owner) view returns (uint256)'
+];
+
 export async function POST(request) {
   try {
     const { wallet_address } = await request.json();
@@ -16,17 +19,44 @@ export async function POST(request) {
     }
 
     const normalizedWallet = wallet_address.toLowerCase();
+    const contractAddress = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS;
 
-    // TODO: Replace with real NFT contract call via ethers
-    // For MVP: assume any verified wallet has NFTs
-    const mockNftBalance = NFT_MIN_BALANCE + Math.floor(Math.random() * 10);
+    if (!contractAddress) {
+      console.error('Missing NEXT_PUBLIC_NFT_CONTRACT_ADDRESS');
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Connect to Ethereum mainnet (Infura public RPC)
+    const provider = new ethers.JsonRpcProvider('https://eth.drpc.org');
+
+    // Create contract instance
+    const contract = new ethers.Contract(contractAddress, ERC721_ABI, provider);
+
+    // Call balanceOf on contract
+    let nftBalance = 0;
+    try {
+      const balance = await contract.balanceOf(normalizedWallet);
+      nftBalance = Number(balance);
+    } catch (contractErr) {
+      console.error('Contract call error:', contractErr);
+      return new Response(
+        JSON.stringify({
+          error: 'Could not verify NFT balance. Check wallet or contract address.',
+          debug: contractErr.message
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Upsert player in database
     const { data: player, error } = await supabaseAdmin
       .from('pvp_players')
       .upsert({
         wallet_address: normalizedWallet,
-        nft_balance: mockNftBalance,
+        nft_balance: nftBalance,
         verified_at: new Date().toISOString()
       }, { onConflict: 'wallet_address' })
       .select()
@@ -57,7 +87,7 @@ export async function POST(request) {
   } catch (err) {
     console.error('PvP verify-nft error:', err);
     return new Response(
-      JSON.stringify({ error: 'Server error verifying NFT' }),
+      JSON.stringify({ error: 'Server error verifying NFT', debug: err.message }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
