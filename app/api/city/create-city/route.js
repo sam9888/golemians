@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { isValidWallet } from '@/lib/pvpLogic';
 import { generateCityCoordinates } from '@/lib/cityLogic';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 export async function POST(request) {
   try {
@@ -10,6 +11,18 @@ export async function POST(request) {
       return new Response(
         JSON.stringify({ error: 'Invalid EVM wallet address' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Rate limit: max 5 city creation attempts per wallet per hour
+    const rateCheck = checkRateLimit(wallet_address, 5, 3600);
+    if (!rateCheck.allowed) {
+      return new Response(
+        JSON.stringify({
+          error: 'Too many requests. Try again later.',
+          retryAfter: rateCheck.retryAfter
+        }),
+        { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': rateCheck.retryAfter } }
       );
     }
 

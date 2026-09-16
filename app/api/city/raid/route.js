@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { isValidWallet } from '@/lib/pvpLogic';
 import { calculateRaidOutcome, calculateStolenGole, calculateDefense } from '@/lib/cityLogic';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 export async function POST(request) {
   try {
@@ -10,6 +11,18 @@ export async function POST(request) {
       return new Response(
         JSON.stringify({ error: 'Invalid wallet address' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Rate limit: max 20 raids per wallet per hour
+    const rateCheck = checkRateLimit(`raid_${attacker_wallet}`, 20, 3600);
+    if (!rateCheck.allowed) {
+      return new Response(
+        JSON.stringify({
+          error: 'Too many raids. Try again later.',
+          retryAfter: rateCheck.retryAfter
+        }),
+        { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': rateCheck.retryAfter } }
       );
     }
 
