@@ -5,6 +5,7 @@ import Utility from './components/Utility';
 import Roadmap from './components/Roadmap';
 import Allowlist from './components/Allowlist';
 import LadderGame from './components/LadderGame';
+import PvPGame from './components/PvPGame';
 import FAQ from './components/FAQ';
 import Footer from './components/Footer';
 
@@ -18,6 +19,7 @@ export default function Home() {
       <Roadmap />
       <Allowlist />
       <LadderGame />
+      <PvPGame />
       <FAQ />
       <Footer />
     </main>
