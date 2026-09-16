@@ -4,12 +4,8 @@ import XIcon from './XIcon';
 
 const NAV_ITEMS = [
   { href: '#home', label: 'HOME' },
-  { href: '#allowlist', label: 'ALLOWLIST' },
-  { href: '#ladder', label: 'CLIMB THE LADDER' },
-  { href: '#guardians', label: 'GOLEMIANS' },
-  { href: '#utility', label: 'UTILITY' },
   { href: '#roadmap', label: 'ROADMAP' },
-  { href: '#faq', label: 'FAQ' },
+  { href: '#city', label: 'PLAY' }
 ];
 
 export default function Header() {
@@ -32,7 +28,7 @@ export default function Header() {
           <a href="https://x.com/golemians" target="_blank" rel="noopener noreferrer" aria-label="Golemians on X">
             <XIcon />
           </a>
-          <a href="#allowlist" className="btn-cta">JOIN ALLOWLIST</a>
+          <a href="#city" className="btn-cta">PLAY NOW</a>
         </div>
         <button
           className="hamburger"
@@ -53,7 +49,7 @@ export default function Header() {
           <a href="https://x.com/golemians" target="_blank" rel="noopener noreferrer" aria-label="Golemians on X">
             <XIcon />
           </a>
-          <a href="#allowlist" className="btn-cta">JOIN ALLOWLIST</a>
+          <a href="#city" className="btn-cta">PLAY NOW</a>
         </div>
       </div>
     </header>

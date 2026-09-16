@@ -169,17 +169,26 @@ export default function CityBuilder() {
 
   if (!city && !loading) {
     return (
-      <section className="allow-hero grid-bg" style={{ paddingTop: '80px', paddingBottom: '80px' }}>
+      <section id="city" className="allow-hero grid-bg" style={{ paddingTop: '80px', paddingBottom: '80px' }}>
         <div className="container">
           <p className="eyebrow">CITY BUILDER</p>
           <h2 className="title glow-text">BUILD YOUR KINGDOM</h2>
-          <p className="lede">Command your Golemians, build with $GOLE, and raid other cities.</p>
+          <p className="lede">Connect your wallet, verify 10+ Golemians NFTs, and build your city.</p>
 
-          <div className="card allow-card" style={{ maxWidth: '400px', margin: '40px auto' }}>
-            <h3 style={{ color: 'var(--yellow)' }}>CREATE YOUR CITY</h3>
+          <div className="card allow-card" style={{ maxWidth: '450px', margin: '40px auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <p style={{ color: 'var(--yellow)', fontSize: '1.1rem', fontWeight: 'bold' }}>⚡ REQUIREMENTS</p>
+              <ul style={{ textAlign: 'left', marginTop: '12px', fontSize: '.9rem', lineHeight: '1.8' }}>
+                <li>✅ Connected EVM Wallet</li>
+                <li>✅ 10+ Golemians NFTs minimum</li>
+                <li>✅ Starting 100,000 $GOLE</li>
+              </ul>
+            </div>
+
+            <h3 style={{ color: 'var(--yellow)', marginTop: '20px' }}>CONNECT WALLET</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
               <div className="field">
-                <label>WALLET ADDRESS</label>
+                <label>WALLET ADDRESS (0x...)</label>
                 <input
                   type="text"
                   value={wallet}
@@ -204,10 +213,10 @@ export default function CityBuilder() {
                 disabled={creating}
                 onClick={createCity}
               >
-                {creating ? 'CREATING...' : 'CREATE CITY'}
+                {creating ? 'VERIFYING...' : 'VERIFY & CREATE CITY'}
               </button>
               <p style={{ fontSize: '.75rem', color: 'rgba(255,255,255,.6)', marginTop: '8px', textAlign: 'center' }}>
-                Starting balance: 100,000 $GOLE
+                We'll verify your NFT holdings before creating your city.
               </p>
             </div>
           </div>

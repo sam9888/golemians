@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { isValidWallet } from '@/lib/pvpLogic';
+import { isValidWallet, NFT_MIN_BALANCE } from '@/lib/pvpLogic';
 import { generateCityCoordinates } from '@/lib/cityLogic';
 import { checkRateLimit } from '@/lib/rateLimit';
 
@@ -27,6 +27,26 @@ export async function POST(request) {
     }
 
     const normalizedWallet = wallet_address.toLowerCase();
+
+    // Verify NFT balance (10+ minimum)
+    const { data: playerData } = await supabaseAdmin
+      .from('pvp_players')
+      .select('nft_balance')
+      .eq('wallet_address', normalizedWallet)
+      .maybeSingle();
+
+    const nftBalance = playerData?.nft_balance || 0;
+
+    if (nftBalance < NFT_MIN_BALANCE) {
+      return new Response(
+        JSON.stringify({
+          error: 'You need 10+ Golemians NFTs to play',
+          have: nftBalance,
+          need: NFT_MIN_BALANCE
+        }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Check if city already exists
     const { data: existing } = await supabaseAdmin
