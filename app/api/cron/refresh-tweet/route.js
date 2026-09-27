@@ -5,6 +5,12 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 // and caches it in Supabase. If X_BEARER_TOKEN isn't set yet, this is a
 // harmless no-op - the site just keeps using the manual daily_tweets
 // rotation until credentials are added.
+//
+// Also doubles as a Supabase keep-alive: free-tier projects auto-pause
+// after 7 days with no API activity, and the X-fetching logic below used
+// to be the only Supabase call in this route - so it never ran while
+// X_BEARER_TOKEN was unset, and the project paused. The ping below runs
+// unconditionally so this counts as activity every day either way.
 
 function isAuthorized(request) {
   const cronSecret = process.env.CRON_SECRET;
@@ -19,6 +25,12 @@ export async function GET(request) {
       status: 401,
       headers: { 'Content-Type': 'application/json' }
     });
+  }
+
+  try {
+    await supabaseAdmin.from('cities').select('id').limit(1);
+  } catch (err) {
+    console.error('Supabase keep-alive ping failed:', err);
   }
 
   const bearerToken = process.env.X_BEARER_TOKEN;
