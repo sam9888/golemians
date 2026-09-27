@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { isValidWallet, NFT_MIN_BALANCE } from '@/lib/pvpLogic';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 // ERC721 ABI - only need balanceOf function
 const ERC721_ABI = [
@@ -19,6 +20,16 @@ export async function POST(request) {
     }
 
     const normalizedWallet = wallet_address.toLowerCase();
+
+    // Rate limit: max 30 verification calls per wallet per hour
+    const rateCheck = checkRateLimit(`verify_nft_${normalizedWallet}`, 30, 3600);
+    if (!rateCheck.allowed) {
+      return new Response(
+        JSON.stringify({ error: 'Too many verification attempts. Try again later.', retryAfter: rateCheck.retryAfter }),
+        { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': rateCheck.retryAfter } }
+      );
+    }
+
     const contractAddress = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS;
 
     if (!contractAddress) {

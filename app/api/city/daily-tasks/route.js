@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { isValidWallet } from '@/lib/pvpLogic';
 import { DAILY_TASKS, getDailyBonusForTier } from '@/lib/nftTiers';
+import { requireSessionResponse } from '@/lib/session';
 
 export async function GET(request) {
   try {
@@ -85,6 +86,9 @@ export async function POST(request) {
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
+
+    const authError = requireSessionResponse(request, wallet_address);
+    if (authError) return authError;
 
     const normalizedWallet = wallet_address.toLowerCase();
     const today = new Date().toISOString().split('T')[0];

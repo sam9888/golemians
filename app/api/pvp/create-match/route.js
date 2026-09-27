@@ -1,5 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { isValidWallet, NFT_MIN_BALANCE, DEFAULT_STAKE } from '@/lib/pvpLogic';
+import { checkRateLimit } from '@/lib/rateLimit';
+import { requireSessionResponse } from '@/lib/session';
 
 export async function POST(request) {
   try {
@@ -20,9 +22,22 @@ export async function POST(request) {
       );
     }
 
+    // Only the challenger (player1) needs to be the authenticated caller —
+    // player2 just needs to be a verified PvP player already.
+    const authError = requireSessionResponse(request, player1_wallet);
+    if (authError) return authError;
+
     const p1 = player1_wallet.toLowerCase();
     const p2 = player2_wallet.toLowerCase();
     const stake = stake_amount || DEFAULT_STAKE;
+
+    const rateCheck = checkRateLimit(`create_match_${p1}`, 20, 3600);
+    if (!rateCheck.allowed) {
+      return new Response(
+        JSON.stringify({ error: 'Too many match requests. Try again later.', retryAfter: rateCheck.retryAfter }),
+        { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': rateCheck.retryAfter } }
+      );
+    }
 
     // Fetch both players
     const { data: players, error: fetchError } = await supabaseAdmin

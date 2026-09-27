@@ -1,10 +1,11 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { isValidWallet } from '@/lib/pvpLogic';
 import { getCitiesInTerritory, getTerritoryBonus } from '@/lib/mapLogic';
+import { requireSessionResponse } from '@/lib/session';
 
 export async function POST(request) {
   try {
-    const { attacker_wallet, defender_city_id, raid_successful } = await request.json();
+    const { attacker_wallet, defender_city_id, raid_id } = await request.json();
 
     if (!isValidWallet(attacker_wallet)) {
       return new Response(
@@ -13,9 +14,12 @@ export async function POST(request) {
       );
     }
 
-    if (!raid_successful) {
+    const authError = requireSessionResponse(request, attacker_wallet);
+    if (authError) return authError;
+
+    if (!raid_id) {
       return new Response(
-        JSON.stringify({ error: 'Can only claim territory after successful raid' }),
+        JSON.stringify({ error: 'Missing raid_id' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
@@ -50,6 +54,33 @@ export async function POST(request) {
       );
     }
 
+    // Verify a real, successful raid actually happened between these two
+    // cities before allowing a territory claim — never trust a client flag.
+    const { data: raid } = await supabaseAdmin
+      .from('raids')
+      .select('id, attacker_city_id, defender_city_id, status, territory_claimed')
+      .eq('id', raid_id)
+      .maybeSingle();
+
+    if (
+      !raid ||
+      raid.attacker_city_id !== attackerCity.id ||
+      raid.defender_city_id !== defenderCity.id ||
+      raid.status !== 'success'
+    ) {
+      return new Response(
+        JSON.stringify({ error: 'No successful raid found for this attack' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (raid.territory_claimed) {
+      return new Response(
+        JSON.stringify({ error: 'Territory already claimed for this raid' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Check if already controlled
     const { data: existingTerritory } = await supabaseAdmin
       .from('territories')
@@ -75,6 +106,12 @@ export async function POST(request) {
       }, { onConflict: 'city_id' });
 
     if (claimError) throw claimError;
+
+    // Mark this raid as consumed so it can't be used to claim territory twice
+    await supabaseAdmin
+      .from('raids')
+      .update({ territory_claimed: true })
+      .eq('id', raid.id);
 
     // Get all territories controlled by attacker
     const { data: allTerritories } = await supabaseAdmin

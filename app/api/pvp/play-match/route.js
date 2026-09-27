@@ -1,10 +1,32 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { STEP_INFO, rollSurvives, MAX_STEP } from '@/lib/gameLogic';
 import { determineMatchWinner, calculateTokenTransfer } from '@/lib/pvpLogic';
+import { checkRateLimit } from '@/lib/rateLimit';
+import { requireSessionResponse } from '@/lib/session';
 
 export async function POST(request) {
   try {
-    const { match_id, action } = await request.json();
+    const { match_id, action, wallet_address } = await request.json();
+
+    if (!wallet_address) {
+      return new Response(
+        JSON.stringify({ error: 'Missing wallet_address' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const authError = requireSessionResponse(request, wallet_address);
+    if (authError) return authError;
+
+    const normalizedWallet = wallet_address.toLowerCase();
+
+    const rateCheck = checkRateLimit(`play_match_${normalizedWallet}`, 120, 3600);
+    if (!rateCheck.allowed) {
+      return new Response(
+        JSON.stringify({ error: 'Too many requests. Try again later.', retryAfter: rateCheck.retryAfter }),
+        { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': rateCheck.retryAfter } }
+      );
+    }
 
     // Fetch match
     const { data: match, error: matchError } = await supabaseAdmin
@@ -17,6 +39,20 @@ export async function POST(request) {
       return new Response(
         JSON.stringify({ error: 'Match not found' }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify the caller is actually a participant in this match
+    const { data: participants } = await supabaseAdmin
+      .from('pvp_players')
+      .select('id, wallet_address')
+      .in('id', [match.player1_id, match.player2_id]);
+
+    const isParticipant = participants?.some(p => p.wallet_address === normalizedWallet);
+    if (!isParticipant) {
+      return new Response(
+        JSON.stringify({ error: 'You are not a participant in this match' }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
       );
     }
 

@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { isValidWallet } from '@/lib/pvpLogic';
 import { STRUCTURE_TYPES } from '@/lib/cityLogic';
+import { requireSessionResponse } from '@/lib/session';
 
 export async function POST(request) {
   try {
@@ -19,6 +20,9 @@ export async function POST(request) {
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
+
+    const authError = requireSessionResponse(request, wallet_address);
+    if (authError) return authError;
 
     const normalizedWallet = wallet_address.toLowerCase();
     const config = STRUCTURE_TYPES[structure_type];

@@ -47,6 +47,14 @@ create policy "public can read positions"
   on public.live_positions for select
   to anon
   using (true);
+
+-- =========================================================
+-- raids.territory_claimed: prevents claiming territory more
+-- than once for the same successful raid (see claim-territory
+-- route, which now verifies a real raid row instead of trusting
+-- a client-supplied flag).
+-- =========================================================
+alter table public.raids add column if not exists territory_claimed boolean not null default false;
 ```
 
 ## Map System
@@ -104,9 +112,10 @@ create policy "public can read positions"
    - Message players in your territory
    - Form alliances or declare wars
 
-## API Endpoints
+## API Endpoints (actual paths)
 
-- `GET /api/pvp/map` - Get live positions + territories
-- `POST /api/pvp/territory/claim` - Claim territory after raid
-- `GET /api/pvp/proximity` - Get nearby enemies
-- `POST /api/city/raid` - Updated to check proximity
+- `GET /api/pvp/realtime-map?wallet=0x..` - Player position, nearby enemies (with distance/damage-multiplier/can_raid), proximity alert, and territory bonus in one response. There is no separate `/api/pvp/proximity` endpoint — this is the only map read endpoint.
+- `POST /api/pvp/claim-territory` - `{ attacker_wallet, defender_city_id, raid_id }`. Requires a signed-in session for `attacker_wallet` (see WALLET_AUTH_SETUP.md) and verifies `raid_id` refers to a real `status: 'success'` raid between the two cities that hasn't already been claimed — a client can no longer just assert `raid_successful: true`.
+- `POST /api/city/raid` - `{ attacker_wallet, defender_city_id }`. Requires a signed-in session for `attacker_wallet`. Enforces the proximity/distance rules above (`lib/mapLogic.js`) and applies the damage multiplier server-side; returns `raid.id` for use in the claim-territory call.
+
+Note: `live_positions` and the 30-second position-update loop described above are aspirational — no route currently reads or writes that table. The UI in `app/components/GameMap.jsx` re-fetches `realtime-map` on demand instead.

@@ -1,6 +1,8 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { STRUCTURE_TYPES } from '@/lib/cityLogic';
+import WalletConnect from './WalletConnect';
+import GameMap from './GameMap';
 
 export default function CityBuilder() {
   const [wallet, setWallet] = useState('');
@@ -12,17 +14,21 @@ export default function CityBuilder() {
   const [cityName, setCityName] = useState('My City');
   const [creating, setCreating] = useState(false);
 
-  const [cities, setCities] = useState([]);
-  const [loadingMap, setLoadingMap] = useState(false);
-
-  const [selectedTarget, setSelectedTarget] = useState(null);
-  const [raiding, setRaiding] = useState(false);
-
   const [claimingRewards, setClaimingRewards] = useState(false);
 
+  const handleWalletVerified = (walletAddr) => {
+    if (!walletAddr) {
+      setWallet('');
+      setCity(null);
+      return;
+    }
+    setWallet(walletAddr);
+    fetchCity(walletAddr);
+  };
+
   const createCity = async () => {
-    if (!wallet.trim()) {
-      setError('Enter wallet address');
+    if (!wallet) {
+      setError('Connect your wallet first');
       return;
     }
     setError('');
@@ -66,21 +72,6 @@ export default function CityBuilder() {
       setError('Failed to fetch city');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchMap = async () => {
-    setLoadingMap(true);
-    try {
-      const res = await fetch('/api/city/map?limit=50');
-      const data = await res.json();
-      if (res.ok) {
-        setCities(data.cities || []);
-      }
-    } catch (err) {
-      console.error('Failed to fetch map:', err);
-    } finally {
-      setLoadingMap(false);
     }
   };
 
@@ -133,40 +124,6 @@ export default function CityBuilder() {
     }
   };
 
-  const raid = async (targetId) => {
-    if (!city) return;
-    setRaiding(true);
-    setError('');
-    try {
-      const res = await fetch('/api/city/raid', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          attacker_wallet: wallet.trim(),
-          defender_city_id: targetId
-        })
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error);
-      } else {
-        setSelectedTarget(data.raid);
-        await fetchCity(wallet.trim());
-        await fetchMap();
-      }
-    } catch (err) {
-      setError('Network error during raid');
-    } finally {
-      setRaiding(false);
-    }
-  };
-
-  useEffect(() => {
-    if (tab === 'map') {
-      fetchMap();
-    }
-  }, [tab]);
-
   if (!city && !loading) {
     return (
       <section id="city" className="allow-hero grid-bg" style={{ paddingTop: '80px', paddingBottom: '80px' }}>
@@ -187,37 +144,32 @@ export default function CityBuilder() {
 
             <h3 style={{ color: 'var(--yellow)', marginTop: '20px' }}>CONNECT WALLET</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
-              <div className="field">
-                <label>WALLET ADDRESS (0x...)</label>
-                <input
-                  type="text"
-                  value={wallet}
-                  onChange={(e) => setWallet(e.target.value)}
-                  placeholder="0x..."
-                  style={{ fontFamily: 'monospace' }}
-                />
-              </div>
-              <div className="field">
-                <label>CITY NAME</label>
-                <input
-                  type="text"
-                  value={cityName}
-                  onChange={(e) => setCityName(e.target.value)}
-                  placeholder="My City"
-                />
-              </div>
-              {error && <p className="field-error">{error}</p>}
-              <button
-                type="button"
-                className="btn-cta full-btn"
-                disabled={creating}
-                onClick={createCity}
-              >
-                {creating ? 'VERIFYING...' : 'VERIFY & CREATE CITY'}
-              </button>
-              <p style={{ fontSize: '.75rem', color: 'rgba(255,255,255,.6)', marginTop: '8px', textAlign: 'center' }}>
-                We'll verify your NFT holdings before creating your city.
-              </p>
+              <WalletConnect onVerified={handleWalletVerified} />
+              {wallet && (
+                <>
+                  <div className="field">
+                    <label>CITY NAME</label>
+                    <input
+                      type="text"
+                      value={cityName}
+                      onChange={(e) => setCityName(e.target.value)}
+                      placeholder="My City"
+                    />
+                  </div>
+                  {error && <p className="field-error">{error}</p>}
+                  <button
+                    type="button"
+                    className="btn-cta full-btn"
+                    disabled={creating}
+                    onClick={createCity}
+                  >
+                    {creating ? 'VERIFYING...' : 'VERIFY & CREATE CITY'}
+                  </button>
+                  <p style={{ fontSize: '.75rem', color: 'rgba(255,255,255,.6)', marginTop: '8px', textAlign: 'center' }}>
+                    We&apos;ll verify your NFT holdings before creating your city.
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -326,58 +278,7 @@ export default function CityBuilder() {
         {tab === 'map' && (
           <div className="card allow-card">
             <h3 style={{ color: 'var(--yellow)', marginBottom: '16px' }}>⚔️ WORLD MAP & RAIDS</h3>
-            {loadingMap ? (
-              <p>Loading map...</p>
-            ) : cities.length === 0 ? (
-              <p>No cities found</p>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
-                {cities.map((c) => (
-                  <div
-                    key={c.id}
-                    style={{
-                      padding: '12px',
-                      border: city?.id === c.id ? '2px solid var(--yellow)' : '1px solid rgba(204,255,0,.2)',
-                      borderRadius: '6px',
-                      background: city?.id === c.id ? 'rgba(204,255,0,.1)' : 'rgba(255,255,255,.02)'
-                    }}
-                  >
-                    <p style={{ fontWeight: 'bold', color: city?.id === c.id ? 'var(--yellow)' : '#fff' }}>
-                      {city?.id === c.id ? '📍 ' : ''}{c.name}
-                    </p>
-                    <p style={{ fontSize: '.8rem', color: 'rgba(255,255,255,.6)', marginTop: '4px' }}>
-                      ({c.x}, {c.y})
-                    </p>
-                    <p style={{ fontSize: '.75rem', marginTop: '6px' }}>
-                      💎 {c.nft_balance} | 🛡️ {c.strength}
-                    </p>
-                    <p style={{ fontSize: '.75rem', marginTop: '4px', color: 'var(--yellow)' }}>
-                      💰 {Math.floor(c.resources.gole || c.resources || 0).toLocaleString()} $GOLE
-                    </p>
-                    {city?.id !== c.id && (
-                      <button
-                        type="button"
-                        className="btn-cta"
-                        style={{ width: '100%', marginTop: '8px', fontSize: '.75rem', padding: '6px' }}
-                        disabled={raiding}
-                        onClick={() => raid(c.id)}
-                      >
-                        {raiding ? '⚔️ ...' : '⚔️ RAID'}
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {selectedTarget && (
-              <div className="check-result wagmi" style={{ marginTop: '20px' }}>
-                {selectedTarget.status === 'success' ? 'RAID SUCCESS!' : 'RAID DEFENDED!'}
-                <span className="wagmi-sub">
-                  Status: {selectedTarget.status} | $GOLE Stolen: {Math.floor(selectedTarget.gole_stolen).toLocaleString()}
-                </span>
-              </div>
-            )}
+            <GameMap wallet={wallet} />
           </div>
         )}
       </div>

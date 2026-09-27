@@ -1,7 +1,9 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { isValidWallet } from '@/lib/pvpLogic';
 import { calculateRaidOutcome, calculateStolenGole, calculateDefense } from '@/lib/cityLogic';
+import { canRaidCity, getRaidDamageMultiplier } from '@/lib/mapLogic';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { requireSessionResponse } from '@/lib/session';
 
 export async function POST(request) {
   try {
@@ -13,6 +15,9 @@ export async function POST(request) {
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
+
+    const authError = requireSessionResponse(request, attacker_wallet);
+    if (authError) return authError;
 
     // Rate limit: max 20 raids per wallet per hour
     const rateCheck = checkRateLimit(`raid_${attacker_wallet}`, 20, 3600);
@@ -63,6 +68,19 @@ export async function POST(request) {
       );
     }
 
+    // Enforce proximity: raids only allowed within MAP_CONFIG.maxDistance hexes
+    if (!canRaidCity(attackerCity.x_coordinate, attackerCity.y_coordinate, defenderCity.x_coordinate, defenderCity.y_coordinate)) {
+      return new Response(
+        JSON.stringify({ error: 'Target is out of raid range' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const damageMultiplier = getRaidDamageMultiplier(
+      attackerCity.x_coordinate, attackerCity.y_coordinate,
+      defenderCity.x_coordinate, defenderCity.y_coordinate
+    );
+
     // Fetch structures for both cities
     const { data: attackerStructures = [] } = await supabaseAdmin
       .from('structures')
@@ -87,8 +105,10 @@ export async function POST(request) {
       .eq('city_id', defenderCity.id)
       .eq('status', 'idle');
 
-    // Calculate strength (Golemians + defensive structures)
-    const attackerStrength = attackerGolemians.length * 10; // 10 power per Golemian
+    // Calculate strength (Golemians + defensive structures), scaled by
+    // proximity-based damage multiplier (closer = bonus attack strength)
+    const baseAttackerStrength = attackerGolemians.length * 10; // 10 power per Golemian
+    const attackerStrength = Math.round(baseAttackerStrength * damageMultiplier);
     const defenderStrength = (defenderGolemians.length * 10) + calculateDefense(defenderStructures);
 
     // Determine outcome
@@ -146,6 +166,7 @@ export async function POST(request) {
           status: raidStatus,
           attacker_strength: attackerStrength,
           defender_strength: defenderStrength,
+          damage_multiplier: damageMultiplier,
           gole_stolen: stolenGole
         }
       }),

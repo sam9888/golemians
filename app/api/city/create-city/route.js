@@ -3,6 +3,7 @@ import { isValidWallet, NFT_MIN_BALANCE } from '@/lib/pvpLogic';
 import { generateCityCoordinates } from '@/lib/cityLogic';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { verifyNftOwnership } from '@/lib/web3Connect';
+import { requireSessionResponse } from '@/lib/session';
 
 export async function POST(request) {
   try {
@@ -14,6 +15,9 @@ export async function POST(request) {
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
+
+    const authError = requireSessionResponse(request, wallet_address);
+    if (authError) return authError;
 
     // Rate limit: max 5 city creation attempts per wallet per hour
     const rateCheck = checkRateLimit(wallet_address, 5, 3600);

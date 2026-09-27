@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import WalletConnect from './WalletConnect';
 
 const RUNGS = [
   { step: 1, tier: 'public', label: 'PUBLIC', multiplier: '2x' },
@@ -34,31 +35,38 @@ export default function PvPGame() {
 
   const [tab, setTab] = useState('play'); // play, leaderboard, stats
 
-  const verifyNft = async () => {
-    if (!wallet.trim()) {
-      setVerifyError('Enter your wallet address');
-      return;
-    }
+  const verifyNft = async (walletAddr) => {
     setVerifyError('');
     setVerifying(true);
     try {
       const res = await fetch('/api/pvp/verify-nft', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet_address: wallet.trim() })
+        body: JSON.stringify({ wallet_address: walletAddr })
       });
       const data = await res.json();
       if (!res.ok) {
         setVerifyError(data.error);
       } else {
         setVerified(true);
-        await fetchPlayerStats(wallet.trim());
+        await fetchPlayerStats(walletAddr);
       }
     } catch (err) {
       setVerifyError('Network error - please try again');
     } finally {
       setVerifying(false);
     }
+  };
+
+  const handleWalletVerified = (walletAddr) => {
+    if (!walletAddr) {
+      setWallet('');
+      setVerified(false);
+      setPlayerStats(null);
+      return;
+    }
+    setWallet(walletAddr);
+    verifyNft(walletAddr);
   };
 
   const fetchPlayerStats = async (walletAddr) => {
@@ -135,7 +143,7 @@ export default function PvPGame() {
       const res = await fetch('/api/pvp/play-match', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ match_id: matchId, action: 'climb' })
+        body: JSON.stringify({ match_id: matchId, action: 'climb', wallet_address: wallet })
       });
       const data = await res.json();
       if (res.ok) {
@@ -163,7 +171,7 @@ export default function PvPGame() {
       const res = await fetch('/api/pvp/play-match', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ match_id: matchId, action: 'finish' })
+        body: JSON.stringify({ match_id: matchId, action: 'finish', wallet_address: wallet })
       });
       const data = await res.json();
       if (res.ok) {
@@ -206,25 +214,9 @@ export default function PvPGame() {
           <div className="card allow-card" style={{ maxWidth: '400px', margin: '40px auto' }}>
             <h3 style={{ color: 'var(--yellow)' }}>CONNECT WALLET</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
-              <div className="field">
-                <label>EVM WALLET ADDRESS</label>
-                <input
-                  type="text"
-                  value={wallet}
-                  onChange={(e) => setWallet(e.target.value)}
-                  placeholder="0x..."
-                  style={{ fontFamily: 'monospace' }}
-                />
-              </div>
+              <WalletConnect onVerified={handleWalletVerified} />
+              {verifying && <p>Checking NFT balance...</p>}
               {verifyError && <p className="field-error">{verifyError}</p>}
-              <button
-                type="button"
-                className="btn-cta full-btn"
-                disabled={verifying}
-                onClick={verifyNft}
-              >
-                {verifying ? 'VERIFYING...' : 'VERIFY NFT'}
-              </button>
             </div>
           </div>
         </div>
