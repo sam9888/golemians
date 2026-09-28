@@ -40,8 +40,9 @@ export async function POST(request) {
       );
     }
 
-    // Connect to Ethereum mainnet (Infura public RPC)
-    const provider = new ethers.JsonRpcProvider('https://eth.drpc.org');
+    // Golemians NFT collection is deployed on Robinhood Chain (chainId 4663),
+    // not Ethereum mainnet.
+    const provider = new ethers.JsonRpcProvider('https://rpc.mainnet.chain.robinhood.com');
 
     // Create contract instance
     const contract = new ethers.Contract(contractAddress, ERC721_ABI, provider);

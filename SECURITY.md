@@ -7,7 +7,7 @@
 - [x] Read-only operations only (balanceOf calls)
 
 ## ✅ NFT Contract Verification
-- [x] Uses public RPC (eth.drpc.org) - no API key needed
+- [x] Uses public RPC (rpc.mainnet.chain.robinhood.com) - no API key needed
 - [x] Read-only contract calls (balanceOf)
 - [x] Contract address in .env (not hardcoded)
 - [x] Ethers.js v6 (latest security patches)
