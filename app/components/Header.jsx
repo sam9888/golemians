@@ -5,7 +5,7 @@ import XIcon from './XIcon';
 const NAV_ITEMS = [
   { href: '#home', label: 'HOME' },
   { href: '#roadmap', label: 'ROADMAP' },
-  { href: '#city', label: 'PLAY' }
+  { href: '#play', label: 'PLAY' }
 ];
 
 export default function Header() {
@@ -28,7 +28,7 @@ export default function Header() {
           <a href="https://x.com/golemians" target="_blank" rel="noopener noreferrer" aria-label="Golemians on X">
             <XIcon />
           </a>
-          <a href="#city" className="btn-cta">PLAY NOW</a>
+          <a href="#play" className="btn-cta">PLAY NOW</a>
         </div>
         <button
           className="hamburger"
@@ -49,7 +49,7 @@ export default function Header() {
           <a href="https://x.com/golemians" target="_blank" rel="noopener noreferrer" aria-label="Golemians on X">
             <XIcon />
           </a>
-          <a href="#city" className="btn-cta">PLAY NOW</a>
+          <a href="#play" className="btn-cta">PLAY NOW</a>
         </div>
       </div>
     </header>

@@ -11,6 +11,8 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 // to be the only Supabase call in this route - so it never ran while
 // X_BEARER_TOKEN was unset, and the project paused. The ping below runs
 // unconditionally so this counts as activity every day either way.
+// Pings `submissions` (not a game table) since it's guaranteed to exist
+// regardless of which game systems are live.
 
 function isAuthorized(request) {
   const cronSecret = process.env.CRON_SECRET;
@@ -28,7 +30,7 @@ export async function GET(request) {
   }
 
   try {
-    await supabaseAdmin.from('cities').select('id').limit(1);
+    await supabaseAdmin.from('submissions').select('id').limit(1);
   } catch (err) {
     console.error('Supabase keep-alive ping failed:', err);
   }

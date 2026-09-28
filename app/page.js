@@ -1,7 +1,7 @@
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Roadmap from './components/Roadmap';
-import CityBuilder from './components/CityBuilder';
+import GameComingSoon from './components/GameComingSoon';
 import Footer from './components/Footer';
 
 export default function Home() {
@@ -10,7 +10,7 @@ export default function Home() {
       <Header />
       <Hero />
       <Roadmap />
-      <CityBuilder />
+      <GameComingSoon />
       <Footer />
     </main>
   );
