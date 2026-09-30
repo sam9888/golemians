@@ -88,9 +88,13 @@ export default function WalletConnect({ onVerified }) {
     onVerified?.(null);
   };
 
+  // Deliberately not named anything containing "wallet-connect" / "connect-wallet":
+  // several ad blocker and privacy-extension filter lists (e.g. crypto-scam /
+  // "badware" lists) match that exact string pattern and strip the element
+  // entirely, silently hiding this button for a meaningful slice of visitors.
   if (verified && wallet) {
     return (
-      <div className="wallet-connect wallet-connect--verified">
+      <div className="site-auth-panel site-auth-panel--verified">
         <span>✅ Connected: {wallet.slice(0, 6)}...{wallet.slice(-4)}</span>
         {nftBalance !== null && <span> · {nftBalance} Golemians NFTs</span>}
         <button className="btn-outline" onClick={handleDisconnect} style={{ marginLeft: 12 }}>
@@ -101,7 +105,7 @@ export default function WalletConnect({ onVerified }) {
   }
 
   return (
-    <div className="wallet-connect">
+    <div className="site-auth-panel">
       <button
         className="btn-cta"
         onClick={handleConnect}
