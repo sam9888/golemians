@@ -1,0 +1,28 @@
+# Deploys game-server/ (the Colyseus match server) — NOT the Next.js app,
+# which stays on Vercel. Lives at the repo root (rather than inside
+# game-server/) so the Docker build context includes the sibling shared/
+# directory; see game-server/Dockerfile.
+#
+# Rename `app` to your actual Fly.io app name before first deploy
+# (`fly launch` / `fly apps create`).
+app = "golemians-arena"
+primary_region = "iad"
+
+[build]
+  dockerfile = "game-server/Dockerfile"
+
+[env]
+  PORT = "2567"
+
+[http_service]
+  internal_port = 2567
+  force_https = true
+  # A match in progress must not be scaled to zero mid-game, so this trades
+  # a small always-on cost for not killing live matches.
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
